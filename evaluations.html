@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow | Evaluaciones de Desempeño</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#64748B',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444',
+                        surface: '#F8FAFC',
+                        border: '#E2E8F0'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        .evaluation-card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 p-6">
+            <div class="mb-8">
+                <h1 class="text-xl font-bold text-gray-900">Flow</h1>
+                <p class="text-sm text-gray-500">Gestión de productividad</p>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="calendar.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-calendar w-5 text-center"></i>
+                    <span>Calendario</span>
+                </a>
+                <a href="kanban.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Kanban</span>
+                </a>
+                <a href="tasks.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-tasks w-5 text-center"></i>
+                    <span>Tareas</span>
+                </a>
+                <a href="tickets.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-5 text-center"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="meetings.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span>Reuniones</span>
+                </a>
+                <a href="notices.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-bell w-5 text-center"></i>
+                    <span>Avisos</span>
+                </a>
+                <a href="metrics.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-chart-bar w-5 text-center"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg border-l-4 border-blue-600">
+                    <i class="fas fa-star w-5 text-center"></i>
+                    <span>Evaluaciones</span>
+                </a>
+                <a href="ticket-evaluations.html"  class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-user-chart w-5 text-center"></i>
+                    <span>Análisis Personal</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Evaluaciones de Desempeño</h1>
+                    <p class="text-gray-500">Seguimiento de KPIs y métricas de productividad</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        Trimestre: Q3 2023
+                    </div>
+                    <div class="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">JD</div>
+                        <div>
+                            <span class="text-gray-700">John Doe</span>
+                            <div class="text-xs text-gray-500">Administrador</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Selector -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Evaluación de Colaborador</h2>
+                        <p class="text-gray-500 text-sm">Selecciona un colaborador para ver su evaluación detallada</p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <select class="block w-full md:w-64 bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500">
+                            <option value="user1" selected>John Doe - Desarrollador</option>
+                            <option value="user2">María García - Analista</option>
+                            <option value="user3">Carlos López - Administrador</option>
+                            <option value="user4">Ana Martínez - Diseñadora</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl border border-gray-200 p-6 evaluation-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Puntuación General</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">84%</h3>
+                            <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-arrow-up mr-1"></i> 5% vs trimestre anterior
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-chart-line text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6 evaluation-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Tareas Completadas</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">87%</h3>
+                            <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-check-circle mr-1"></i> Meta: 80%
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-tasks text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6 evaluation-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Satisfacción Cliente</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">88%</h3>
+                            <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-check-circle mr-1"></i> Meta: 80%
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-smile text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6 evaluation-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Tickets Resueltos</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">92%</h3>
+                            <p class="text-yellow-500 text-sm mt-1">
+                                <i class="fas fa-chart-line mr-1"></i> Meta: 95%
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-ticket-alt text-orange-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- KPI Progress -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-6">Evaluación de KPIs</h2>
+                        <div class="space-y-6">
+                            <!-- KPI 1 -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Compartir actualización semanal</span>
+                                        <span class="text-sm font-medium text-gray-700">100%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Video y planeación compartidos todos los viernes antes de las 12:00 p.m.</p>
+                                </div>
+                                <div class="ml-4 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600 text-sm"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- KPI 2 -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Completar solicitudes a tiempo</span>
+                                        <span class="text-sm font-medium text-gray-700">92%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Meta: 95%. 46 de 50 solicitudes completadas en el tiempo estipulado.</p>
+                                </div>
+                                <div class="ml-4 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600 text-sm"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- KPI 3 -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Tareas completadas en productividad</span>
+                                        <span class="text-sm font-medium text-gray-700">87%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Meta: 80%. 52 de 60 tareas completadas este mes.</p>
+                                </div>
+                                <div class="ml-4 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600 text-sm"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- KPI 4 -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Revisiones de código actualizadas</span>
+                                        <span class="text-sm font-medium text-gray-700">75%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 75%"></div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Meta: 100%. 3 de 4 revisiones documentadas este mes.</p>
+                                </div>
+                                <div class="ml-4 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-exclamation text-yellow-600 text-sm"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- KPI 5 -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Errores críticos en código</span>
+                                        <span class="text-sm font-medium text-gray-700">3%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 97%"></div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Meta: <5%. 2 errores críticos de 65 scripts liberados.</p>
+                                </div>
+                                <div class="ml-4 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600 text-sm"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Chart -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-6">Desempeño por Tipo de Actividad</h2>
+                        <div class="h-80">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-8">
+                    <!-- Overall Score -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Puntuación General</h2>
+                        <div class="flex justify-center">
+                            <div class="relative w-48 h-48">
+                                <svg class="w-full h-full" viewBox="0 0 100 100">
+                                    <!-- Background circle -->
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="10" />
+                                    <!-- Progress circle -->
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#10b981" stroke-width="10" 
+                                            stroke-dasharray="283" stroke-dashoffset="45.28" 
+                                            stroke-linecap="round" transform="rotate(-90 50 50)" />
+                                    <!-- Text -->
+                                    <text x="50" y="50" text-anchor="middle" dy="7" font-size="20" font-weight="bold" fill="#1f2937">84%</text>
+                                    <text x="50" y="70" text-anchor="middle" font-size="12" fill="#6b7280">Puntuación</text>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-6 text-center">
+                            <p class="text-gray-600 text-sm">El colaborador ha superado el 80% de los objetivos establecidos</p>
+                            <div class="mt-4 flex justify-center space-x-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-600">4</div>
+                                    <div class="text-xs text-gray-500">KPIs Cumplidos</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-gray-400">0</div>
+                                    <div class="text-xs text-gray-500">KPIs No Cumplidos</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-yellow-500">1</div>
+                                    <div class="text-xs text-gray-500">KPIs Parciales</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Trend -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Tendencia Trimestral</h2>
+                        <div class="h-64">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Recomendaciones</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mt-1">
+                                    <i class="fas fa-exclamation text-yellow-600 text-sm"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-gray-900">Revisiones de código</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Falta documentar 1 revisión de código para alcanzar la meta del 100%.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mt-1">
+                                    <i class="fas fa-lightbulb text-blue-600 text-sm"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-gray-900">Solicitudes a tiempo</h3>
+                                    <p class="text-xs text-gray-500 mt-1">3% por debajo de la meta. Considerar optimización de procesos.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mt-1">
+                                    <i class="fas fa-award text-green-600 text-sm"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-gray-900">Reconocimiento</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Excelente desempeño en actualizaciones semanales y satisfacción del cliente.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 flex justify-end space-x-4">
+                <button class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
+                    <i class="fas fa-download mr-2"></i>Exportar Reporte
+                </button>
+                <button class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                    <i class="fas fa-print mr-2"></i>Imprimir Evaluación
+                </button>
+                <button class="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+                    <i class="fas fa-share mr-2"></i>Compartir Resultados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Performance Chart
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            const performanceChart = new Chart(performanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tickets', 'Tareas', 'Reuniones', 'Revisiones', 'Capacitación'],
+                    datasets: [{
+                        label: 'Porcentaje de Cumplimiento',
+                        data: [92, 87, 95, 75, 100],
+                        backgroundColor: [
+                            '#3B82F6',
+                            '#10B981',
+                            '#8B5CF6',
+                            '#F59E0B',
+                            '#EC4899'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Trend Chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            const trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Julio', 'Agosto', 'Septiembre'],
+                    datasets: [{
+                        label: 'Puntuación General',
+                        data: [79, 80, 84],
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

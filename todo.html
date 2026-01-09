@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow | Lista de Tareas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#64748B',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444',
+                        surface: '#F8FAFC',
+                        border: '#E2E8F0'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .task-card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 p-6">
+            <div class="mb-8">
+                <h1 class="text-xl font-bold text-gray-900">Flow</h1>
+                <p class="text-sm text-gray-500">Gestión de productividad</p>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="calendar.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-calendar w-5 text-center"></i>
+                    <span>Calendario</span>
+                </a>
+                <a href="kanban.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Kanban</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg border-l-4 border-blue-600">
+                    <i class="fas fa-tasks w-5 text-center"></i>
+                    <span>Tareas</span>
+                </a>
+                <a href="tickets.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-5 text-center"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="meetings.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span>Reuniones</span>
+                </a>
+                <a href="notices.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-bell w-5 text-center"></i>
+                    <span>Avisos</span>
+                </a>
+                <a href="metrics.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-chart-bar w-5 text-center"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="evaluations.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-star w-5 text-center"></i>
+                    <span>Evaluaciones</span>
+                </a>
+                <a href="ticket-evaluations.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-user-chart w-5 text-center"></i>
+                    <span>Análisis Personal</span>
+                </a>
+                <a href="gantt.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-chart-gantt w-5 text-center"></i>
+                    <span>Diagrama Gantt</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Lista de Tareas</h1>
+                    <p class="text-gray-500">Gestión y seguimiento de tareas personales y de equipo</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        Hoy: 15 Oct 2023
+                    </div>
+                    <div class="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">JD</div>
+                        <div>
+                            <span class="text-gray-700">John Doe</span>
+                            <div class="text-xs text-gray-500">Administrador</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Selector -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Gestión de Tareas</h2>
+                        <p class="text-gray-500 text-sm">Organiza y prioriza tus tareas diarias</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-4">
+                        <select class="block w-full md:w-64 bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500">
+                            <option value="all" selected>Todas las tareas</option>
+                            <option value="project1">Proyecto Alpha</option>
+                            <option value="project2">Proyecto Beta</option>
+                            <option value="personal">Tareas personales</option>
+                        </select>
+                        <button id="newTaskBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>Nueva Tarea
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl border border-gray-200 p-6 task-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Tareas</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">24</h3>
+                            <p class="text-blue-500 text-sm mt-1">
+                                <i class="fas fa-list mr-1"></i> Este mes
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-tasks text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6 task-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Completadas</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">18</h3>
+                            <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-check-circle mr-1"></i> 75% completado
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6 task-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Pendientes</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">6</h3>
+                            <p class="text-yellow-500 text-sm mt-1">
+                                <i class="fas fa-clock mr-1"></i> Por completar
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6 task-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Atrasadas</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">2</h3>
+                            <p class="text-red-500 text-sm mt-1">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Requieren atención
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-exclamation text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <!-- Todo List -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-semibold text-gray-900">Mis Tareas</h2>
+                            <div class="flex space-x-2">
+                                <button class="px-3 py-1 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">
+                                    <i class="fas fa-filter mr-1"></i>Filtrar
+                                </button>
+                                <button class="px-3 py-1 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">
+                                    <i class="fas fa-sort mr-1"></i>Ordenar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Filter Tabs -->
+                        <div class="flex border-b border-gray-200 mb-4">
+                            <button class="tab-btn px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600" data-filter="all">Todas</button>
+                            <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700" data-filter="pending">Pendientes</button>
+                            <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700" data-filter="completed">Completadas</button>
+                            <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700" data-filter="overdue">Atrasadas</button>
+                        </div>
+                        
+                        <!-- Task List -->
+                        <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2" id="taskList">
+                            <!-- Task 1 -->
+                            <div class="task-item flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50" data-status="pending" data-priority="high">
+                                <input type="checkbox" class="mt-1 mr-3 h-5 w-5 text-blue-600 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="font-medium text-gray-900">Diseñar interfaz de usuario</h3>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Alta</span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">Crear wireframes y mockups para el módulo principal</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Vence: 15 Oct</span>
+                                        <i class="fas fa-user ml-3 mr-1"></i>
+                                        <span>María García</span>
+                                        <i class="fas fa-tag ml-3 mr-1"></i>
+                                        <span>Proyecto Alpha</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex space-x-2">
+                                    <button class="text-gray-400 hover:text-blue-500 edit-task">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-500 delete-task">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 2 -->
+                            <div class="task-item flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50" data-status="completed" data-priority="medium">
+                                <input type="checkbox" class="mt-1 mr-3 h-5 w-5 text-blue-600 rounded focus:ring-blue-500" checked>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="font-medium text-gray-900 line-through">Reunión de kickoff</h3>
+                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Completada</span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1 line-through">Presentar el proyecto al equipo y definir objetivos</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Completada: 1 Oct</span>
+                                        <i class="fas fa-user ml-3 mr-1"></i>
+                                        <span>John Doe</span>
+                                        <i class="fas fa-tag ml-3 mr-1"></i>
+                                        <span>Proyecto Alpha</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex space-x-2">
+                                    <button class="text-gray-400 hover:text-blue-500 edit-task">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-500 delete-task">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 3 -->
+                            <div class="task-item flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50" data-status="pending" data-priority="medium">
+                                <input type="checkbox" class="mt-1 mr-3 h-5 w-5 text-blue-600 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="font-medium text-gray-900">Desarrollar API backend</h3>
+                                        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Media</span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">Implementar endpoints para el módulo de usuarios</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Vence: 20 Oct</span>
+                                        <i class="fas fa-user ml-3 mr-1"></i>
+                                        <span>Carlos López</span>
+                                        <i class="fas fa-tag ml-3 mr-1"></i>
+                                        <span>Proyecto Alpha</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex space-x-2">
+                                    <button class="text-gray-400 hover:text-blue-500 edit-task">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-500 delete-task">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 4 -->
+                            <div class="task-item flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50" data-status="overdue" data-priority="high">
+                                <input type="checkbox" class="mt-1 mr-3 h-5 w-5 text-blue-600 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="font-medium text-gray-900">Pruebas de integración</h3>
+                                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">Atrasada</span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">Validar la integración entre frontend y backend</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Vencía: 10 Oct</span>
+                                        <i class="fas fa-user ml-3 mr-1"></i>
+                                        <span>Ana Martínez</span>
+                                        <i class="fas fa-tag ml-3 mr-1"></i>
+                                        <span>Proyecto Beta</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex space-x-2">
+                                    <button class="text-gray-400 hover:text-blue-500 edit-task">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-500 delete-task">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 5 -->
+                            <div class="task-item flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50" data-status="pending" data-priority="low">
+                                <input type="checkbox" class="mt-1 mr-3 h-5 w-5 text-blue-600 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="font-medium text-gray-900">Documentación técnica</h3>
+                                        <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Baja</span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">Crear manual de usuario y documentación API</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>Vence: 30 Oct</span>
+                                        <i class="fas fa-user ml-3 mr-1"></i>
+                                        <span>John Doe</span>
+                                        <i class="fas fa-tag ml-3 mr-1"></i>
+                                        <span>Proyecto Alpha</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex space-x-2">
+                                    <button class="text-gray-400 hover:text-blue-500 edit-task">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-gray-400 hover:text-red-500 delete-task">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-8">
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <i class="fas fa-plus-circle text-blue-600 text-xl mb-2"></i>
+                                <span class="text-sm font-medium">Nueva Tarea</span>
+                            </button>
+                            <button class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <i class="fas fa-filter text-purple-600 text-xl mb-2"></i>
+                                <span class="text-sm font-medium">Filtrar</span>
+                            </button>
+                            <button class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <i class="fas fa-sort text-green-600 text-xl mb-2"></i>
+                                <span class="text-sm font-medium">Ordenar</span>
+                            </button>
+                            <button class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <i class="fas fa-share-alt text-orange-600 text-xl mb-2"></i>
+                                <span class="text-sm font-medium">Compartir</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Task Statistics -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Progreso General</span>
+                                    <span class="text-sm font-medium text-gray-700">75%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Tareas de Alta Prioridad</span>
+                                    <span class="text-sm font-medium text-gray-700">60%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-red-500 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Tiempo Promedio</span>
+                                    <span class="text-sm font-medium text-gray-700">3.2 días</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 64%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Deadlines -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Próximos Vencimientos</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-palette text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Diseño UI</h3>
+                                    <p class="text-xs text-gray-500">15 Oct - En 2 días</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-code text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">API Backend</h3>
+                                    <p class="text-xs text-gray-500">20 Oct - En 7 días</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-file-alt text-orange-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Documentación</h3>
+                                    <p class="text-xs text-gray-500">30 Oct - En 17 días</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Task Modal -->
+    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Nueva Tarea</h2>
+            <form id="taskForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                        <input type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <textarea class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de vencimiento</label>
+                            <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="low">Baja</option>
+                                <option value="medium">Media</option>
+                                <option value="high">Alta</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Proyecto</label>
+                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="alpha">Proyecto Alpha</option>
+                            <option value="beta">Proyecto Beta</option>
+                            <option value="personal">Tareas personales</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancelTask" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Task completion toggling
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const taskContainer = this.closest('.task-item');
+                    const taskTitle = taskContainer.querySelector('h3');
+                    const taskDescription = taskContainer.querySelector('p');
+                    const statusBadge = taskContainer.querySelector('.text-xs');
+                    
+                    if (this.checked) {
+                        taskTitle.classList.add('line-through');
+                        if (taskDescription) taskDescription.classList.add('line-through');
+                        taskContainer.setAttribute('data-status', 'completed');
+                        if (statusBadge) {
+                            statusBadge.className = 'text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full';
+                            statusBadge.textContent = 'Completada';
+                        }
+                    } else {
+                        taskTitle.classList.remove('line-through');
+                        if (taskDescription) taskDescription.classList.remove('line-through');
+                        taskContainer.setAttribute('data-status', 'pending');
+                        // Restore original priority badge
+                        const priority = taskContainer.getAttribute('data-priority');
+                        if (statusBadge) {
+                            if (priority === 'high') {
+                                statusBadge.className = 'text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full';
+                                statusBadge.textContent = 'Alta';
+                            } else if (priority === 'medium') {
+                                statusBadge.className = 'text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full';
+                                statusBadge.textContent = 'Media';
+                            } else {
+                                statusBadge.className = 'text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full';
+                                statusBadge.textContent = 'Baja';
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Filter tasks
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Update active tab
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('text-blue-600', 'border-blue-600');
+                        btn.classList.add('text-gray-500');
+                    });
+                    this.classList.add('text-blue-600', 'border-blue-600');
+                    this.classList.remove('text-gray-500');
+                    
+                    // Filter tasks
+                    const filter = this.getAttribute('data-filter');
+                    const tasks = document.querySelectorAll('.task-item');
+                    
+                    tasks.forEach(task => {
+                        if (filter === 'all') {
+                            task.style.display = 'flex';
+                        } else {
+                            if (task.getAttribute('data-status') === filter) {
+                                task.style.display = 'flex';
+                            } else {
+                                task.style.display = 'none';
+                            }
+                        }
+                    });
+                });
+            });
+
+            // New task modal
+            const newTaskBtn = document.getElementById('newTaskBtn');
+            const taskModal = document.getElementById('taskModal');
+            const cancelTask = document.getElementById('cancelTask');
+            const taskForm = document.getElementById('taskForm');
+            
+            newTaskBtn.addEventListener('click', function() {
+                taskModal.classList.remove('hidden');
+            });
+            
+            cancelTask.addEventListener('click', function() {
+                taskModal.classList.add('hidden');
+            });
+            
+            taskForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                // In a real app, you would save the task here
+                alert('Tarea creada exitosamente');
+                taskModal.classList.add('hidden');
+                taskForm.reset();
+            });
+
+            // Delete task
+            const deleteButtons = document.querySelectorAll('.delete-task');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskItem = this.closest('.task-item');
+                    if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+                        taskItem.remove();
+                    }
+                });
+            });
+
+            // Edit task
+            const editButtons = document.querySelectorAll('.edit-task');
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // In a real app, you would open an edit modal here
+                    alert('Funcionalidad de edición - En desarrollo');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

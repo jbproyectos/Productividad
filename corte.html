@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicio Suspendido | Zentli Net</title>
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --danger: #DC2626;
+            --success: #25D366;
+            --dark: #1F2937;
+            --gray: #6B7280;
+            --light: #F8FAFC;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            background: var(--danger);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .warning-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .message {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .main-message {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 10px;
+        }
+
+        .sub-message {
+            color: var(--gray);
+            line-height: 1.5;
+        }
+
+        .contact-card {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .contact-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .whatsapp-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--success);
+            margin: 10px 0;
+        }
+
+        .whatsapp-btn {
+            display: block;
+            background: var(--success);
+            color: white;
+            text-decoration: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+        }
+
+        .phone-btn {
+            display: block;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .phone-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: var(--light);
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 25px 20px;
+            }
+            
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .warning-icon {
+                font-size: 50px;
+            }
+            
+            .title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="warning-icon">⚠️</div>
+            <h1 class="title">Servicio Suspendido</h1>
+            <p>Zentli Net</p>
+        </div>
+        
+        <div class="content">
+            <div class="message">
+                <div class="main-message">Tu servicio de internet está suspendido</div>
+                <div class="sub-message">
+                    Para reactivar tu conexión, contacta a nuestro equipo de soporte.
+                </div>
+            </div>
+            
+            <div class="contact-card">
+                <div class="contact-title">Contacta a Soporte</div>
+                <div class="whatsapp-number">+52 771 263 7541</div>
+                <p style="color: var(--gray); font-size: 14px; margin-top: 5px;">
+                    Horario: Lunes a Viernes 9:00 - 18:00 hrs
+                </p>
+            </div>
+            
+            <a href="https://wa.me/527712637541?text=Hola,%20necesito%20reactivar%20mi%20servicio%20de%20internet%20Zentli%20Net" 
+               class="whatsapp-btn" target="_blank">
+                💬 Contactar por WhatsApp
+            </a>
+            
+            <a href="tel:+527712637541" class="phone-btn">
+                📞 Llamar por Teléfono
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 Zentli Net - Internet de Alta Velocidad</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow | Diagrama de Gantt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#64748B',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444',
+                        surface: '#F8FAFC',
+                        border: '#E2E8F0'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gantt-task {
+            position: absolute;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .gantt-task:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        .gantt-milestone {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 16px solid;
+            transform: translateX(-8px);
+            cursor: pointer;
+        }
+        .gantt-row {
+            min-height: 50px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 p-6">
+            <div class="mb-8">
+                <h1 class="text-xl font-bold text-gray-900">Flow</h1>
+                <p class="text-sm text-gray-500">Gestión de productividad</p>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="calendar.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-calendar w-5 text-center"></i>
+                    <span>Calendario</span>
+                </a>
+                <a href="kanban.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Kanban</span>
+                </a>
+                <a href="tasks.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-tasks w-5 text-center"></i>
+                    <span>Tareas</span>
+                </a>
+                <a href="tickets.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-5 text-center"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="meetings.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span>Reuniones</span>
+                </a>
+                <a href="notices.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-bell w-5 text-center"></i>
+                    <span>Avisos</span>
+                </a>
+                <a href="metrics.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-chart-bar w-5 text-center"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="evaluations.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-star w-5 text-center"></i>
+                    <span>Evaluaciones</span>
+                </a>
+                <a href="ticket-evaluations.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-user-chart w-5 text-center"></i>
+                    <span>Análisis Personal</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg border-l-4 border-blue-600">
+                    <i class="fas fa-chart-gantt w-5 text-center"></i>
+                    <span>Diagrama Gantt</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Diagrama de Gantt</h1>
+                    <p class="text-gray-500">Planificación y seguimiento visual de proyectos</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        Proyecto: Alpha
+                    </div>
+                    <div class="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">JD</div>
+                        <div>
+                            <span class="text-gray-700">John Doe</span>
+                            <div class="text-xs text-gray-500">Administrador</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Selector -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Planificación de Proyectos</h2>
+                        <p class="text-gray-500 text-sm">Visualiza y gestiona la línea de tiempo de tus proyectos</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-4">
+                        <select id="projectSelect" class="block w-full md:w-64 bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500">
+                            <option value="project1" selected>Proyecto Alpha - Desarrollo Web</option>
+                            <option value="project2">Proyecto Beta - App Móvil</option>
+                            <option value="project3">Proyecto Gamma - Migración Sistema</option>
+                        </select>
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>Nuevo Proyecto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Progreso Total</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">68%</h3>
+                            <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-arrow-up mr-1"></i> 12% vs mes anterior
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-chart-line text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Tareas Activas</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">15</h3>
+                            <p class="text-blue-500 text-sm mt-1">
+                                <i class="fas fa-tasks mr-1"></i> En progreso
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-tasks text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Días Restantes</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">45</h3>
+                            <p class="text-yellow-500 text-sm mt-1">
+                                <i class="fas fa-calendar mr-1"></i> Hasta finalización
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Próximo Hito</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">15 Nov</h3>
+                            <p class="text-purple-500 text-sm mt-1">
+                                <i class="fas fa-flag mr-1"></i> Versión 1.0
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-flag text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gantt Chart -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-semibold text-gray-900">Planificación del Proyecto Alpha</h2>
+                    <div class="flex space-x-2">
+                        <button id="prevMonth" class="px-3 py-1 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="currentMonth" class="px-3 py-1 text-sm font-medium">Octubre 2023</span>
+                        <button id="nextMonth" class="px-3 py-1 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                            <i class="fas fa-sync-alt mr-1"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Gantt Container -->
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <div class="min-w-max">
+                        <!-- Timeline Header -->
+                        <div class="flex border-b border-gray-200 bg-gray-50">
+                            <div class="w-64 py-3 px-4 text-sm font-medium text-gray-700">Tareas y Hitos</div>
+                            <div class="flex">
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">1</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">2</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">3</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">4</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">5</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">6</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">7</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">8</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">9</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">10</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">11</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">12</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">13</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">14</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">15</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">16</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">17</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">18</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">19</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">20</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">21</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">22</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">23</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">24</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">25</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">26</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">27</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">28</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">29</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">30</div>
+                                <div class="w-16 py-3 text-center text-sm font-medium text-gray-700">31</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gantt Rows -->
+                        <div class="relative">
+                            <!-- Today Line -->
+                            <div class="absolute top-0 bottom-0 left-0 border-l-2 border-red-500 z-10" style="left: calc(256px + 16px * 2);">
+                                <div class="absolute -top-2 -left-2 w-4 h-4 bg-red-500 rounded-full"></div>
+                                <div class="absolute -top-8 left-2 text-xs font-medium text-red-500 whitespace-nowrap">Hoy</div>
+                            </div>
+                            
+                            <!-- Task 1 -->
+                            <div class="gantt-row flex border-b border-gray-100 py-4 relative">
+                                <div class="w-64 py-2 px-4 text-sm text-gray-700 flex items-center">
+                                    <i class="fas fa-palette text-blue-500 mr-2"></i>
+                                    Diseñar interfaz de usuario
+                                </div>
+                                <div class="flex relative" style="width: 496px;">
+                                    <div class="gantt-task bg-blue-500" style="left: 80px; width: 160px;" data-task="design-ui">
+                                        <div class="flex justify-between">
+                                            <span>Diseño UI</span>
+                                            <span>75%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 2 -->
+                            <div class="gantt-row flex border-b border-gray-100 py-4 relative">
+                                <div class="w-64 py-2 px-4 text-sm text-gray-700 flex items-center">
+                                    <i class="fas fa-code text-green-500 mr-2"></i>
+                                    Desarrollar API backend
+                                </div>
+                                <div class="flex relative" style="width: 496px;">
+                                    <div class="gantt-task bg-green-500" style="left: 112px; width: 192px;" data-task="backend-api">
+                                        <div class="flex justify-between">
+                                            <span>Backend Dev</span>
+                                            <span>45%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 3 -->
+                            <div class="gantt-row flex border-b border-gray-100 py-4 relative">
+                                <div class="w-64 py-2 px-4 text-sm text-gray-700 flex items-center">
+                                    <i class="fas fa-mobile-alt text-purple-500 mr-2"></i>
+                                    Desarrollo frontend
+                                </div>
+                                <div class="flex relative" style="width: 496px;">
+                                    <div class="gantt-task bg-purple-500" style="left: 160px; width: 224px;" data-task="frontend-dev">
+                                        <div class="flex justify-between">
+                                            <span>Frontend</span>
+                                            <span>30%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 4 -->
+                            <div class="gantt-row flex border-b border-gray-100 py-4 relative">
+                                <div class="w-64 py-2 px-4 text-sm text-gray-700 flex items-center">
+                                    <i class="fas fa-vial text-yellow-500 mr-2"></i>
+                                    Pruebas de integración
+                                </div>
+                                <div class="flex relative" style="width: 496px;">
+                                    <div class="gantt-task bg-yellow-500" style="left: 240px; width: 128px;" data-task="integration-test">
+                                        <div class="flex justify-between">
+                                            <span>Testing</span>
+                                            <span>10%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Task 5 -->
+                            <div class="gantt-row flex border-b border-gray-100 py-4 relative">
+                                <div class="w-64 py-2 px-4 text-sm text-gray-700 flex items-center">
+                                    <i class="fas fa-file-alt text-orange-500 mr-2"></i>
+                                    Documentación técnica
+                                </div>
+                                <div class="flex relative" style="width: 496px;">
+                                    <div class="gantt-task bg-orange-500" style="left: 304px; width: 112px;" data-task="documentation">
+                                        <div class="flex justify-between">
+                                            <span>Docs</span>
+                                            <span>5%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Milestone -->
+                            <div class="gantt-row flex border-b border-gray-100 py-4 relative">
+                                <div class="w-64 py-2 px-4 text-sm text-gray-700 flex items-center">
+                                    <i class="fas fa-flag text-red-500 mr-2"></i>
+                                    Hito: Versión 1.0
+                                </div>
+                                <div class="flex relative" style="width: 496px;">
+                                    <div class="gantt-milestone border-bottom-color: red;" style="left: 384px;" data-milestone="v1-release"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Legend -->
+                <div class="mt-6 flex flex-wrap gap-4">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                        <span class="text-xs text-gray-600">Diseño</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                        <span class="text-xs text-gray-600">Desarrollo</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+                        <span class="text-xs text-gray-600">Frontend</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                        <span class="text-xs text-gray-600">Pruebas</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-orange-500 rounded mr-2"></div>
+                        <span class="text-xs text-gray-600">Documentación</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-0 h-0 border-l-4 border-r-4 border-b-8 border-b-red-500 border-l-transparent border-r-transparent mr-2"></div>
+                        <span class="text-xs text-gray-600">Hito</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Project Progress -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Progreso del Proyecto</h2>
+                        <div class="space-y-4">
+                            <!-- Progress Bar 1 -->
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Diseño</span>
+                                    <span class="text-sm font-medium text-gray-700">75%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar 2 -->
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Desarrollo Backend</span>
+                                    <span class="text-sm font-medium text-gray-700">45%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar 3 -->
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Desarrollo Frontend</span>
+                                    <span class="text-sm font-medium text-gray-700">30%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" style="width: 30%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar 4 -->
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Pruebas</span>
+                                    <span class="text-sm font-medium text-gray-700">10%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 10%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar 5 -->
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Documentación</span>
+                                    <span class="text-sm font-medium text-gray-700">5%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full" style="width: 5%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-8">
+                    <!-- Task Details -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Detalles de Tarea</h2>
+                        <div id="taskDetails" class="text-sm text-gray-600">
+                            <p class="text-center py-4">Haz clic en una tarea del diagrama para ver los detalles</p>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Milestones -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Próximos Hitos</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-flag text-red-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Versión 1.0</h3>
+                                    <p class="text-xs text-gray-500">15 Nov - En 31 días</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-code-branch text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Integración Completa</h3>
+                                    <p class="text-xs text-gray-500">30 Oct - En 15 días</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-check-double text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Pruebas Finalizadas</h3>
+                                    <p class="text-xs text-gray-500">10 Nov - En 26 días</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 flex justify-end space-x-4">
+                <button class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
+                    <i class="fas fa-download mr-2"></i>Exportar Plan
+                </button>
+                <button class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                    <i class="fas fa-print mr-2"></i>Imprimir
+                </button>
+                <button class="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+                    <i class="fas fa-share mr-2"></i>Compartir Proyecto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Task click handlers
+            const tasks = document.querySelectorAll('.gantt-task, .gantt-milestone');
+            const taskDetails = document.getElementById('taskDetails');
+            
+            tasks.forEach(task => {
+                task.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task') || this.getAttribute('data-milestone');
+                    
+                    // In a real app, you would fetch task details from an API
+                    const taskData = {
+                        'design-ui': {
+                            title: 'Diseñar interfaz de usuario',
+                            description: 'Crear wireframes y mockups para el módulo principal',
+                            progress: 75,
+                            startDate: '2023-10-05',
+                            endDate: '2023-10-20',
+                            assignee: 'María García',
+                            status: 'En progreso'
+                        },
+                        'backend-api': {
+                            title: 'Desarrollar API backend',
+                            description: 'Implementar endpoints para el módulo de usuarios',
+                            progress: 45,
+                            startDate: '2023-10-10',
+                            endDate: '2023-10-30',
+                            assignee: 'Carlos López',
+                            status: 'En progreso'
+                        },
+                        'frontend-dev': {
+                            title: 'Desarrollo frontend',
+                            description: 'Implementar interfaces de usuario basadas en los diseños',
+                            progress: 30,
+                            startDate: '2023-10-15',
+                            endDate: '2023-11-10',
+                            assignee: 'Ana Martínez',
+                            status: 'En progreso'
+                        },
+                        'integration-test': {
+                            title: 'Pruebas de integración',
+                            description: 'Validar la integración entre frontend y backend',
+                            progress: 10,
+                            startDate: '2023-10-25',
+                            endDate: '2023-11-05',
+                            assignee: 'Equipo de QA',
+                            status: 'Pendiente'
+                        },
+                        'documentation': {
+                            title: 'Documentación técnica',
+                            description: 'Crear manual de usuario y documentación API',
+                            progress: 5,
+                            startDate: '2023-10-30',
+                            endDate: '2023-11-08',
+                            assignee: 'John Doe',
+                            status: 'Pendiente'
+                        },
+                        'v1-release': {
+                            title: 'Hito: Versión 1.0',
+                            description: 'Lanzamiento de la primera versión del producto',
+                            progress: 0,
+                            date: '2023-11-15',
+                            status: 'Planificado'
+                        }
+                    };
+                    
+                    const data = taskData[taskId];
+                    if (data) {
+                        let html = `
+                            <h3 class="font-medium text-gray-900 mb-2">${data.title}</h3>
+                            <p class="mb-3">${data.description}</p>
+                            <div class="space-y-2">
+                        `;
+                        
+                        if (taskId === 'v1-release') {
+                            html += `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Fecha:</span>
+                                    <span>${data.date}</span>
+                                </div>
+                            `;
+                        } else {
+                            html += `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Progreso:</span>
+                                    <span>${data.progress}%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Inicio:</span>
+                                    <span>${data.startDate}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Fin:</span>
+                                    <span>${data.endDate}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Responsable:</span>
+                                    <span>${data.assignee}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        html += `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Estado:</span>
+                                    <span class="px-2 py-1 rounded-full text-xs ${getStatusColor(data.status)}">${data.status}</span>
+                                </div>
+                            </div>
+                        `;
+                        
+                        taskDetails.innerHTML = html;
+                    }
+                });
+            });
+            
+            function getStatusColor(status) {
+                switch(status) {
+                    case 'Completado': return 'bg-green-100 text-green-800';
+                    case 'En progreso': return 'bg-blue-100 text-blue-800';
+                    case 'Pendiente': return 'bg-yellow-100 text-yellow-800';
+                    case 'Planificado': return 'bg-purple-100 text-purple-800';
+                    default: return 'bg-gray-100 text-gray-800';
+                }
+            }
+            
+            // Month navigation
+            const prevMonthBtn = document.getElementById('prevMonth');
+            const nextMonthBtn = document.getElementById('nextMonth');
+            const currentMonthEl = document.getElementById('currentMonth');
+            
+            let currentDate = new Date(2023, 9, 1); // October 2023
+            
+            function updateMonthDisplay() {
+                const options = { year: 'numeric', month: 'long' };
+                currentMonthEl.textContent = currentDate.toLocaleDateString('es-ES', options);
+            }
+            
+            prevMonthBtn.addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                updateMonthDisplay();
+                // In a real app, you would reload the Gantt chart data
+            });
+            
+            nextMonthBtn.addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                updateMonthDisplay();
+                // In a real app, you would reload the Gantt chart data
+            });
+            
+            // Project selector
+            const projectSelect = document.getElementById('projectSelect');
+            projectSelect.addEventListener('change', function() {
+                // In a real app, you would load the selected project's data
+                alert(`Cargando datos del proyecto: ${this.options[this.selectedIndex].text}`);
+            });
+        });
+    </script>
+</body>
+</html>

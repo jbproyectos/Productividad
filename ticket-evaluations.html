@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow | Análisis de Evaluaciones por Persona</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#64748B',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444',
+                        surface: '#F8FAFC',
+                        border: '#E2E8F0'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .analyst-card {
+            transition: all 0.3s ease;
+        }
+        .analyst-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .rating-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        .low-rating {
+            background-color: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #FECACA;
+        }
+        .medium-rating {
+            background-color: #FFFBEB;
+            color: #D97706;
+            border: 1px solid #FED7AA;
+        }
+        .high-rating {
+            background-color: #F0FDF4;
+            color: #16A34A;
+            border: 1px solid #BBF7D0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 p-6">
+            <div class="mb-8">
+                <h1 class="text-xl font-bold text-gray-900">Flow</h1>
+                <p class="text-sm text-gray-500">Gestión de productividad</p>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="calendar.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-calendar w-5 text-center"></i>
+                    <span>Calendario</span>
+                </a>
+                <a href="kanban.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Kanban</span>
+                </a>
+                <a href="tasks.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-tasks w-5 text-center"></i>
+                    <span>Tareas</span>
+                </a>
+                <a href="tickets.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-5 text-center"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="meetings.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span>Reuniones</span>
+                </a>
+                <a href="notices.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-bell w-5 text-center"></i>
+                    <span>Avisos</span>
+                </a>
+                <a href="metrics.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-chart-bar w-5 text-center"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="evaluations.html" class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-star w-5 text-center"></i>
+                    <span>Evaluaciones</span>
+                </a>
+                <a href="ticket-evaluations.html" class="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg border-l-4 border-blue-600">
+                    <i class="fas fa-user-chart w-5 text-center"></i>
+                    <span>Análisis Personal</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Análisis de Evaluaciones por Persona</h1>
+                    <p class="text-gray-500">Analiza el desempeño individual y identifica áreas de mejora</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        Período: Q3 2023
+                    </div>
+                    <div class="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">JD</div>
+                        <div>
+                            <span class="text-gray-700">John Doe</span>
+                            <div class="text-xs text-gray-500">Administrador</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Person Selector -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Seleccionar Persona para Análisis</h2>
+                        <p class="text-gray-500 text-sm">Elige un colaborador para ver su análisis detallado de evaluaciones</p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <select id="person-selector" class="block w-full md:w-80 bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500">
+                            <option value="">Seleccionar persona...</option>
+                            <option value="gustavo" selected>Gustavo Rodríguez - Desarrollador Senior</option>
+                            <option value="maria">María García - Analista de Sistemas</option>
+                            <option value="carlos">Carlos López - Administrador</option>
+                            <option value="ana">Ana Martínez - Diseñadora UX</option>
+                            <option value="luis">Luis Hernández - Soporte Técnico</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Person Summary -->
+            <div id="person-summary" class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                            GR
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Gustavo Rodríguez</h2>
+                            <p class="text-gray-600">Desarrollador Senior - Departamento TI</p>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-star text-yellow-500"></i>
+                                    <span class="font-semibold text-gray-900">4.5</span>
+                                    <span class="text-gray-500 text-sm">Calificación promedio</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-ticket-alt text-blue-500"></i>
+                                    <span class="font-semibold text-gray-900">42</span>
+                                    <span class="text-gray-500 text-sm">Tickets atendidos</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-chart-line text-green-500"></i>
+                                    <span class="font-semibold text-gray-900">88%</span>
+                                    <span class="text-gray-500 text-sm">Satisfacción</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Última evaluación</div>
+                        <div class="text-lg font-semibold text-gray-900">Hace 2 días</div>
+                    </div>
+                </div>
+
+                <!-- Rating Distribution -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div class="text-2xl font-bold text-green-600">24</div>
+                        <div class="text-sm text-green-800">Excelente (5★)</div>
+                        <div class="text-xs text-green-600 mt-1">57% del total</div>
+                    </div>
+                    <div class="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <div class="text-2xl font-bold text-yellow-600">12</div>
+                        <div class="text-sm text-yellow-800">Bueno (4★)</div>
+                        <div class="text-xs text-yellow-600 mt-1">29% del total</div>
+                    </div>
+                    <div class="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <div class="text-2xl font-bold text-orange-600">4</div>
+                        <div class="text-sm text-orange-800">Regular (3★)</div>
+                        <div class="text-xs text-orange-600 mt-1">10% del total</div>
+                    </div>
+                    <div class="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                        <div class="text-2xl font-bold text-red-600">2</div>
+                        <div class="text-sm text-red-800">Bajo (1-2★)</div>
+                        <div class="text-xs text-red-600 mt-1">4% del total</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Analysis -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <!-- Left Column -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Low Ratings Analysis -->
+                    <div class="bg-white rounded-xl border border-gray-200">
+                        <div class="p-6 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                                Análisis de Calificaciones Bajas
+                                <span class="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm">2 evaluaciones</span>
+                            </h2>
+                            <p class="text-sm text-gray-600 mt-1">Identifica problemas específicos y oportunidades de mejora</p>
+                        </div>
+                        <div class="divide-y divide-gray-200">
+                            <!-- Low Rating 1 -->
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Ticket #T-0389 - Error crítico en producción</h3>
+                                        <p class="text-sm text-gray-500">Solicitante: roberto.sanchez@empresa.com</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="rating-badge low-rating">1.5 / 5.0</div>
+                                        <div class="text-sm text-gray-500 mt-1">15 Sep 2023</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Calificación General</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tiempo de Respuesta</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Solución del Problema</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Comunicación</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Comentarios del Cliente</label>
+                                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                        <p class="text-red-800 text-sm">
+                                            "El problema tomó más de 48 horas en resolverse y afectó nuestras operaciones críticas. La comunicación fue deficiente y no recibimos actualizaciones regulares sobre el progreso. Muy decepcionado con el servicio."
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-lightbulb text-yellow-600 mt-1 mr-2"></i>
+                                        <div>
+                                            <h4 class="font-medium text-yellow-800 mb-1">Oportunidad de Mejora Identificada</h4>
+                                            <p class="text-yellow-700 text-sm">
+                                                <strong>Problema:</strong> Tiempo de respuesta lento en incidentes críticos<br>
+                                                <strong>Solución sugerida:</strong> Implementar protocolo de escalamiento rápido para problemas de alta prioridad
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Low Rating 2 -->
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">Ticket #T-0412 - Configuración de API</h3>
+                                        <p class="text-sm text-gray-500">Solicitante: laura.gomez@empresa.com</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="rating-badge low-rating">2.0 / 5.0</div>
+                                        <div class="text-sm text-gray-500 mt-1">22 Sep 2023</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Calificación General</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tiempo de Respuesta</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-yellow-500"></i>
+                                            <i class="fas fa-star text-yellow-500"></i>
+                                            <i class="fas fa-star text-yellow-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Solución del Problema</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Comunicación</label>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-red-500"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Comentarios del Cliente</label>
+                                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                        <p class="text-red-800 text-sm">
+                                            "La solución proporcionada no resolvió el problema por completo. Tuve que contactar nuevamente después de 2 días porque la configuración falló. Falta de conocimiento técnico específico sobre la API."
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-lightbulb text-yellow-600 mt-1 mr-2"></i>
+                                        <div>
+                                            <h4 class="font-medium text-yellow-800 mb-1">Oportunidad de Mejora Identificada</h4>
+                                            <p class="text-yellow-700 text-sm">
+                                                <strong>Problema:</strong> Conocimiento insuficiente en APIs específicas<br>
+                                                <strong>Solución sugerida:</strong> Capacitación especializada en APIs y documentación técnica mejorada
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- All Evaluations -->
+                    <div class="bg-white rounded-xl border border-gray-200">
+                        <div class="p-6 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-900">Todas las Evaluaciones</h2>
+                            <p class="text-sm text-gray-600 mt-1">Historial completo de evaluaciones recibidas</p>
+                        </div>
+                        <div class="p-4">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calificación</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comentarios</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#T-0456</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">maria.garcia@empresa.com</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">28 Sep</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="rating-badge high-rating">5.0</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-500">"Excelente servicio, muy profesional"</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-900">Ver detalles</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#T-0442</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">carlos.lopez@empresa.com</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">26 Sep</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="rating-badge high-rating">4.5</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-500">"Buen trabajo, solución rápida"</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-900">Ver detalles</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#T-0412</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">laura.gomez@empresa.com</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">22 Sep</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="rating-badge low-rating">2.0</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-500">"Solución incompleta, tuvo que reabrirse"</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-900">Ver detalles</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#T-0389</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">roberto.sanchez@empresa.com</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">15 Sep</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="rating-badge low-rating">1.5</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-500">"Tiempo de respuesta muy lento"</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-900">Ver detalles</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <!-- Performance Metrics -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Métricas de Desempeño</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Calificación General</span>
+                                    <span class="text-sm font-medium text-gray-700">4.5/5.0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Tiempo de Respuesta</span>
+                                    <span class="text-sm font-medium text-gray-700">4.2/5.0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 84%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Solución de Problemas</span>
+                                    <span class="text-sm font-medium text-gray-700">4.3/5.0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" style="width: 86%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-gray-700">Comunicación</span>
+                                    <span class="text-sm font-medium text-gray-700">4.6/5.0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Improvement Areas -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Áreas de Mejora Identificadas</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-start p-3 bg-red-50 rounded-lg border border-red-200">
+                                <i class="fas fa-exclamation-circle text-red-600 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="font-medium text-red-800">Tiempo de respuesta en incidentes críticos</h4>
+                                    <p class="text-red-700 text-sm mt-1">2 evaluaciones bajas relacionadas</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="font-medium text-yellow-800">Conocimiento en APIs específicas</h4>
+                                    <p class="text-yellow-700 text-sm mt-1">1 evaluación baja relacionada</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start p-3 bg-green-50 rounded-lg border border-green-200">
+                                <i class="fas fa-check-circle text-green-600 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="font-medium text-green-800">Comunicación con clientes</h4>
+                                    <p class="text-green-700 text-sm mt-1">Fortaleza identificada</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparison -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Comparativa con el Equipo</h2>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Gustavo Rodríguez</span>
+                                <div class="flex items-center">
+                                    <span class="text-sm font-semibold text-gray-900 mr-2">4.5</span>
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Promedio del Equipo</span>
+                                <div class="flex items-center">
+                                    <span class="text-sm font-semibold text-gray-900 mr-2">4.2</span>
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-blue-500 h-2 rounded-full" style="width: 84%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Mejor Calificación</span>
+                                <div class="flex items-center">
+                                    <span class="text-sm font-semibold text-gray-900 mr-2">4.8</span>
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-purple-500 h-2 rounded-full" style="width: 96%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for different people
+        const peopleData = {
+            gustavo: {
+                name: "Gustavo Rodríguez",
+                role: "Desarrollador Senior",
+                department: "TI",
+                averageRating: 4.5,
+                ticketsAttended: 42,
+                satisfaction: 88,
+                ratingDistribution: {
+                    excellent: 24,
+                    good: 12,
+                    regular: 4,
+                    low: 2
+                },
+                lowRatings: [
+                    {
+                        ticket: "T-0389",
+                        requester: "roberto.sanchez@empresa.com",
+                        date: "15 Sep 2023",
+                        overall: 1.5,
+                        responseTime: 1,
+                        problemSolving: 2,
+                        communication: 1,
+                        comments: "El problema tomó más de 48 horas en resolverse y afectó nuestras operaciones críticas. La comunicación fue deficiente y no recibimos actualizaciones regulares sobre el progreso. Muy decepcionado con el servicio.",
+                        improvement: {
+                            problem: "Tiempo de respuesta lento en incidentes críticos",
+                            solution: "Implementar protocolo de escalamiento rápido para problemas de alta prioridad"
+                        }
+                    },
+                    {
+                        ticket: "T-0412",
+                        requester: "laura.gomez@empresa.com",
+                        date: "22 Sep 2023",
+                        overall: 2.0,
+                        responseTime: 3,
+                        problemSolving: 1,
+                        communication: 2,
+                        comments: "La solución proporcionada no resolvió el problema por completo. Tuve que contactar nuevamente después de 2 días porque la configuración falló. Falta de conocimiento técnico específico sobre la API.",
+                        improvement: {
+                            problem: "Conocimiento insuficiente en APIs específicas",
+                            solution: "Capacitación especializada en APIs y documentación técnica mejorada"
+                        }
+                    }
+                ]
+            },
+            maria: {
+                name: "María García",
+                role: "Analista de Sistemas",
+                department: "TI",
+                averageRating: 4.3,
+                ticketsAttended: 38,
+                satisfaction: 86,
+                ratingDistribution: {
+                    excellent: 20,
+                    good: 14,
+                    regular: 3,
+                    low: 1
+                }
+            },
+            carlos: {
+                name: "Carlos López",
+                role: "Administrador",
+                department: "TI",
+                averageRating: 4.1,
+                ticketsAttended: 35,
+                satisfaction: 82,
+                ratingDistribution: {
+                    excellent: 18,
+                    good: 12,
+                    regular: 4,
+                    low: 1
+                }
+            }
+        };
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            const personSelector = document.getElementById('person-selector');
+            
+            personSelector.addEventListener('change', function() {
+                const selectedPerson = this.value;
+                if (selectedPerson && peopleData

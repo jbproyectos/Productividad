@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow | Gestión de Productividad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#64748B',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444',
+                        surface: '#F8FAFC',
+                        border: '#E2E8F0'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .kanban-column {
+            min-height: 500px;
+        }
+        .kanban-card {
+            transition: all 0.2s ease;
+        }
+        .kanban-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+        }
+        .event-indicator {
+            cursor: pointer;
+        }
+        .event-indicator:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Mobile Menu Button -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <button id="mobile-menu-btn" class="w-10 h-10 bg-white rounded-lg shadow flex items-center justify-center">
+            <i class="fas fa-bars text-gray-700"></i>
+        </button>
+    </div>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white border-r border-gray-200 p-6 fixed lg:static h-full z-40">
+            <div class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">Flow</h1>
+                    <p class="text-sm text-gray-500">Gestión de productividad</p>
+                </div>
+                <button id="close-sidebar" class="lg:hidden w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-times text-gray-500"></i>
+                </button>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="calendar">
+                    <i class="fas fa-calendar w-5 text-center"></i>
+                    <span>Calendario</span>
+                </a>
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="kanban">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Kanban</span>
+                </a>
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="tasks">
+                    <i class="fas fa-tasks w-5 text-center"></i>
+                    <span>Tareas</span>
+                </a>
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="tickets">
+                    <i class="fas fa-ticket-alt w-5 text-center"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="meetings">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span>Reuniones</span>
+                </a>
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="departments">
+                    <i class="fas fa-building w-5 text-center"></i>
+                    <span>Departamentos</span>
+                </a>
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="notices">
+                    <i class="fas fa-bell w-5 text-center"></i>
+                    <span>Avisos</span>
+                </a>
+                <a href="#" class="nav-item flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg" data-view="reports">
+                    <i class="fas fa-chart-bar w-5 text-center"></i>
+                    <span>Reportes</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-4 lg:p-8 ml-0 lg:ml-0">
+            <!-- Header -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 lg:mb-8 gap-4">
+                <div>
+                    <h1 class="text-xl lg:text-2xl font-bold text-gray-900" id="view-title">Calendario Mensual</h1>
+                    <p class="text-gray-500" id="current-period">Septiembre 2023</p>
+                </div>
+                <div class="flex flex-col lg:flex-row items-start lg:items-center space-y-2 lg:space-y-0 lg:space-x-4 w-full lg:w-auto">
+                    <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        Departamento: TI
+                    </div>
+                    <div class="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border border-gray-200 w-full lg:w-auto justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">JD</div>
+                            <div>
+                                <span class="text-gray-700">John Doe</span>
+                                <div class="text-xs text-gray-500">Administrador</div>
+                            </div>
+                        </div>
+                        <button class="lg:hidden w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+                            <i class="fas fa-chevron-down text-gray-500"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
+                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
+                    <div class="text-xl lg:text-2xl font-bold text-blue-600">24</div>
+                    <div class="text-gray-500 text-sm">Tickets activos</div>
+                </div>
+                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
+                    <div class="text-xl lg:text-2xl font-bold text-warning">18</div>
+                    <div class="text-gray-500 text-sm">Tareas pendientes</div>
+                </div>
+                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
+                    <div class="text-xl lg:text-2xl font-bold text-success">7</div>
+                    <div class="text-gray-500 text-sm">Reuniones</div>
+                </div>
+                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
+                    <div class="text-xl lg:text-2xl font-bold text-purple-600">12</div>
+                    <div class="text-gray-500 text-sm">Tareas cíclicas</div>
+                </div>
+            </div>
+
+            <!-- Calendar Views -->
+            <div id="calendar-view" class="view-container">
+                <!-- Action Bar -->
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                    <div class="flex flex-wrap gap-2">
+                        <button class="view-toggle px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm lg:text-base" data-view="month">Mes</button>
+                        <button class="view-toggle px-3 lg:px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium text-sm lg:text-base" data-view="week">Semana</button>
+                        <button class="view-toggle px-3 lg:px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium text-sm lg:text-base" data-view="day">Día</button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="nav-btn px-3 lg:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50" data-direction="-1">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="nav-btn px-3 lg:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50" data-direction="1">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button id="add-item-btn" class="px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center space-x-2 hover:bg-blue-700 text-sm lg:text-base">
+                            <i class="fas fa-plus"></i>
+                            <span class="hidden lg:inline">Nuevo elemento</span>
+                            <span class="lg:hidden">Nuevo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calendar Content -->
+                <div id="month-view" class="calendar-view">
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <div class="grid grid-cols-7 gap-1 lg:gap-2 p-2 lg:p-4 bg-gray-50 border-b border-gray-200">
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2">Lun</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2">Mar</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2">Mié</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2">Jue</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2">Vie</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2">Sáb</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2">Dom</div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1 lg:gap-2 p-2 lg:p-4" id="month-days">
+                            <!-- Month days populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="week-view" class="calendar-view hidden">
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <div class="grid grid-cols-8 gap-1 lg:gap-2 p-2 lg:p-4 bg-gray-50 border-b border-gray-200 overflow-x-auto">
+                            <div class="text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-12">Hora</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-20" id="week-day-0">Lun 18</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-20" id="week-day-1">Mar 19</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-20" id="week-day-2">Mié 20</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-20" id="week-day-3">Jue 21</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-20" id="week-day-4">Vie 22</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-20" id="week-day-5">Sáb 23</div>
+                            <div class="text-center text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-20" id="week-day-6">Dom 24</div>
+                        </div>
+                        <div class="p-2 lg:p-4 overflow-x-auto" id="week-hours">
+                            <!-- Week hours populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="day-view" class="calendar-view hidden">
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <div class="p-4 lg:p-6 border-b border-gray-200">
+                            <h3 class="text-base lg:text-lg font-semibold" id="day-title">Lunes, 18 de Septiembre 2023</h3>
+                        </div>
+                        <div class="p-4 lg:p-6" id="day-events">
+                            <!-- Day events populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban View -->
+            <div id="kanban-view" class="view-container hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-lg lg:text-xl font-bold">Tablero Kanban</h2>
+                        <p class="text-gray-500">Gestión visual de tareas</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="px-3 lg:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm lg:text-base">
+                            <i class="fas fa-filter mr-1"></i> Filtrar
+                        </button>
+                        <button id="add-kanban-task" class="px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center space-x-2 hover:bg-blue-700 text-sm lg:text-base">
+                            <i class="fas fa-plus"></i>
+                            <span class="hidden lg:inline">Nueva tarea</span>
+                            <span class="lg:hidden">Nueva</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 overflow-x-auto pb-4">
+                    <!-- Pendiente Column -->
+                    <div class="kanban-column bg-gray-50 rounded-xl p-4 min-w-64">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-gray-700">Pendiente</h3>
+                            <span class="bg-gray-200 text-gray-700 rounded-full px-2 py-1 text-xs" id="pending-count">5</span>
+                        </div>
+                        <div class="space-y-3" id="pending-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <!-- Task Cards will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- En Progreso Column -->
+                    <div class="kanban-column bg-blue-50 rounded-xl p-4 min-w-64">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-gray-700">En Progreso</h3>
+                            <span class="bg-blue-200 text-blue-800 rounded-full px-2 py-1 text-xs" id="progress-count">3</span>
+                        </div>
+                        <div class="space-y-3" id="progress-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <!-- Task Cards will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Revisión Column -->
+                    <div class="kanban-column bg-yellow-50 rounded-xl p-4 min-w-64">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-gray-700">Revisión</h3>
+                            <span class="bg-yellow-200 text-yellow-800 rounded-full px-2 py-1 text-xs" id="review-count">2</span>
+                        </div>
+                        <div class="space-y-3" id="review-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <!-- Task Cards will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Completado Column -->
+                    <div class="kanban-column bg-green-50 rounded-xl p-4 min-w-64">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-gray-700">Completado</h3>
+                            <span class="bg-green-200 text-green-800 rounded-full px-2 py-1 text-xs" id="completed-count">4</span>
+                        </div>
+                        <div class="space-y-3" id="completed-column" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <!-- Task Cards will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding/Editing Items -->
+    <div id="item-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-xl w-full max-w-4xl mx-auto max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-4 lg:p-6 border-b border-gray-200">
+                <h3 class="text-base lg:text-lg font-semibold" id="modal-title">Nuevo elemento</h3>
+                <button id="close-modal" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-times text-gray-500"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-4 lg:p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+                <!-- Type Selection -->
+                <div id="type-selection">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de elemento</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4">
+                        <button type="button" class="item-type-btn p-3 lg:p-4 border-2 border-gray-200 rounded-lg text-center hover:border-blue-500 transition-colors" data-type="ticket">
+                            <i class="fas fa-ticket-alt text-xl lg:text-2xl text-blue-500 mb-2"></i>
+                            <div class="font-medium text-sm lg:text-base">Ticket</div>
+                            <div class="text-xs lg:text-sm text-gray-500">Problema o solicitud</div>
+                        </button>
+                        <button type="button" class="item-type-btn p-3 lg:p-4 border-2 border-gray-200 rounded-lg text-center hover:border-green-500 transition-colors" data-type="task">
+                            <i class="fas fa-tasks text-xl lg:text-2xl text-green-500 mb-2"></i>
+                            <div class="font-medium text-sm lg:text-base">Tarea</div>
+                            <div class="text-xs lg:text-sm text-gray-500">Actividad productiva</div>
+                        </button>
+                        <button type="button" class="item-type-btn p-3 lg:p-4 border-2 border-gray-200 rounded-lg text-center hover:border-purple-500 transition-colors" data-type="meeting">
+                            <i class="fas fa-users text-xl lg:text-2xl text-purple-500 mb-2"></i>
+                            <div class="font-medium text-sm lg:text-base">Reunión</div>
+                            <div class="text-xs lg:text-sm text-gray-500">Encuentro programado</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Forms -->
+                <div id="ticket-form" class="item-form hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Prioridad</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option>Alta</option>
+                                <option>Media</option>
+                                <option>Baja</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha límite</label>
+                            <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                        <textarea class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3" placeholder="Describe el problema o solicitud"></textarea>
+                    </div>
+                </div>
+
+                <div id="task-form" class="item-form hidden space-y-4">
+                    <!-- Departamento y Puesto -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Departamento</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="task-department">
+                                <option value="">Seleccionar departamento</option>
+                                <option value="ti">TI</option>
+                                <option value="ventas">Ventas</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="rh">Recursos Humanos</option>
+                                <option value="contabilidad">Contabilidad</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de asignación</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="task-assignment-type">
+                                <option value="general">General (Todo el departamento)</option>
+                                <option value="puesto">Por puesto específico</option>
+                                <option value="colaborativa">Colaborativa (Múltiples usuarios)</option>
+                                <option value="hora-extra">Hora extra</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Selector de Puesto (se muestra solo cuando se selecciona "Por puesto específico") -->
+                    <div id="position-selector" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Puesto específico</label>
+                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="task-position">
+                            <option value="">Seleccionar puesto</option>
+                            <!-- Puestos se cargan dinámicamente según departamento -->
+                        </select>
+                    </div>
+
+                    <!-- Selector de Usuarios (se muestra para tareas colaborativas) -->
+                    <div id="users-selector" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Usuarios asignados</label>
+                        <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" class="rounded border-gray-300" id="user-1">
+                                <label for="user-1" class="text-sm">Juan Pérez - Desarrollador</label>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" class="rounded border-gray-300" id="user-2">
+                                <label for="user-2" class="text-sm">María García - Analista</label>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" class="rounded border-gray-300" id="user-3">
+                                <label for="user-3" class="text-sm">Carlos López - Administrador</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuración de Hora Extra -->
+                    <div id="overtime-config" class="hidden bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <label class="block text-sm font-medium text-yellow-800 mb-2">Configuración de Hora Extra</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs text-yellow-700 mb-1">Horas extra aprobadas</label>
+                                <input type="number" class="w-full border border-yellow-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="2" min="1" max="8">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-yellow-700 mb-1">Tarifa extra</label>
+                                <select class="w-full border border-yellow-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                    <option>Normal (1.5x)</option>
+                                    <option>Doble (2x)</option>
+                                    <option>Especial (2.5x)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de inicio</label>
+                            <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha compromiso</label>
+                            <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <!-- Recurrence Section -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Repetir tarea</label>
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                                <button class="recurrence-option py-2 px-3 bg-green-600 text-white rounded-lg text-sm font-medium" data-value="none">
+                                    No repetir
+                                </button>
+                                <button class="recurrence-option py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50" data-value="daily">
+                                    Diario
+                                </button>
+                                <button class="recurrence-option py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50" data-value="weekly">
+                                    Semanal
+                                </button>
+                                <button class="recurrence-option py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50" data-value="monthly">
+                                    Mensual
+                                </button>
+                            </div>
+                            
+                            <div id="date-range" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Desde</label>
+                                    <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Hasta</label>
+                                    <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Detalle de la tarea</label>
+                        <textarea class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3" placeholder="Describe la tarea a realizar"></textarea>
+                    </div>
+                </div>
+
+                <div id="meeting-form" class="item-form hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de reunión</label>
+                            <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Hora</label>
+                            <input type="time" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Departamentos invitados</label>
+                            <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-gray-300" id="dept-ti" checked>
+                                    <label for="dept-ti" class="text-sm">TI</label>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-gray-300" id="dept-ventas">
+                                    <label for="dept-ventas" class="text-sm">Ventas</label>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-gray-300" id="dept-marketing">
+                                    <label for="dept-marketing" class="text-sm">Marketing</label>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-gray-300" id="dept-rh">
+                                    <label for="dept-rh" class="text-sm">Recursos Humanos</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Modalidad</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option>Presencial</option>
+                                <option>Virtual</option>
+                                <option>Híbrida</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Recurrence Section for Meetings -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Repetir reunión</label>
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                                <button class="recurrence-option py-2 px-3 bg-purple-600 text-white rounded-lg text-sm font-medium" data-value="none">
+                                    No repetir
+                                </button>
+                                <button class="recurrence-option py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50" data-value="weekly">
+                                    Semanal
+                                </button>
+                                <button class="recurrence-option py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50" data-value="monthly">
+                                    Mensual
+                                </button>
+                                <button class="recurrence-option py-2 px-3 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50" data-value="yearly">
+                                    Anual
+                                </button>
+                            </div>
+                            
+                            <div id="meeting-date-range" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Desde</label>
+                                    <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Hasta</label>
+                                    <input type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Objetivo de la reunión</label>
+                        <textarea class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3" placeholder="Describe el objetivo de la reunión"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end space-x-3 p-4 lg:p-6 border-t border-gray-200">
+                <button id="cancel-btn" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
+                    Cancelar
+                </button>
+                <button id="save-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Viewing Item Details -->
+    <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-xl w-full max-w-2xl mx-auto max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-4 lg:p-6 border-b border-gray-200">
+                <h3 class="text-base lg:text-lg font-semibold" id="detail-title">Detalles del elemento</h3>
+                <button id="close-detail-modal" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-times text-gray-500"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-4 lg:p-6 space-y-6 max-h-[60vh] overflow-y-auto" id="detail-content">
+                <!-- Content populated by JavaScript -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-between p-4 lg:p-6 border-t border-gray-200">
+                <div>
+                    <button id="cancel-item-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 mr-2">
+                        Cancelar
+                    </button>
+                    <button id="delete-item-btn" class="px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700">
+                        Eliminar
+                    </button>
+                </div>
+                <div>
+                    <button id="edit-item-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                        Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de departamentos y puestos
+        const departments = {
+            'ti': {
+                name: 'TI',
+                positions: ['Desarrollador', 'Analista de Sistemas', 'Administrador de Red', 'Soporte Técnico', 'Arquitecto de Software']
+            },
+            'ventas': {
+                name: 'Ventas',
+                positions: ['Ejecutivo de Ventas', 'Gerente de Ventas', 'Asesor Comercial', 'Coordinador de Ventas']
+            },
+            'marketing': {
+                name: 'Marketing', 
+                positions: ['Especialista en Marketing', 'Community Manager', 'Analista de Mercado', 'Diseñador Gráfico']
+            },
+            'rh': {
+                name: 'Recursos Humanos',
+                positions: ['Reclutador', 'Especialista en Nómina', 'Coordinador de Capacitación', 'Analista de RH']
+            },
+            'contabilidad': {
+                name: 'Contabilidad',
+                positions: ['Contador', 'Auxiliar Contable', 'Analista Financiero', 'Auditor']
+            }
+        };
+
+        // Días festivos (ejemplo)
+        const holidays = [
+            '2023-01-01', // Año Nuevo
+            '2023-02-05', // Día de la Constitución
+            '2023-03-21', // Natalicio de Benito Juárez
+            '2023-05-01', // Día del Trabajo
+            '2023-09-16', // Día de la Independencia
+            '2023-12-25'  // Navidad
+        ];
+
+        // Horarios por puesto (ejemplo)
+        const workSchedules = {
+            'Desarrollador': { start: '09:00', end: '18:00', breaks: ['13:00-14:00'] },
+            'Analista de Sistemas': { start: '08:00', end: '17:00', breaks: ['12:00-13:00'] },
+            'Ejecutivo de Ventas': { start: '08:30', end: '17:30', breaks: ['13:00-14:00'] },
+            'default': { start: '09:00', end: '18:00', breaks: ['13:00-14:00'] }
+        };
+
+        // Calendar data and functionality
+        const currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        let currentWeek = 0;
+        let currentDay = currentDate.getDate();
+        let currentView = 'month';
+        let currentMainView = 'calendar';
+        let editingItemId = null;
+
+        const months = [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
+
+        const days = [
+            "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+        ];
+
+        // Sample events data con información de departamentos
+        let events = [
+            { 
+                id: 1, 
+                type: 'ticket', 
+                title: 'Ticket #1234 - Error en sistema', 
+                date: new Date(currentYear, currentMonth, 5), 
+                time: '09:00',
+                department: 'ti',
+                priority: 'alta',
+                description: 'Los usuarios reportan errores al intentar generar reportes en el módulo de ventas.',
+                status: 'active'
+            },
+            { 
+                id: 2, 
+                type: 'task', 
+                title: 'Revisar documentación técnica', 
+                date: new Date(currentYear, currentMonth, 7), 
+                time: '14:00',
+                department: 'ti',
+                assignmentType: 'puesto',
+                position: 'Desarrollador',
+                description: 'Revisar y actualizar la documentación técnica del sistema de gestión de inventarios.',
+                status: 'active'
+            },
+            { 
+                id: 3, 
+                type: 'meeting', 
+                title: 'Reunión de equipo TI', 
+                date: new Date(currentYear, currentMonth, 12), 
+                time: '10:30', 
+                recurrence: 'weekly',
+                departments: ['ti'],
+                description: 'Reunión semanal para revisar el progreso de los proyectos en curso.',
+                status: 'active'
+            },
+            { 
+                id: 4, 
+                type: 'task', 
+                title: 'Capacitación nuevo software', 
+                date: new Date(currentYear, currentMonth, 15), 
+                time: '11:00',
+                department: 'ti',
+                assignmentType: 'colaborativa',
+                users: ['user-1', 'user-2'],
+                description: 'Capacitar al equipo en el uso del nuevo software de gestión de proyectos.',
+                status: 'active'
+            },
+            { 
+                id: 5, 
+                type: 'task', 
+                title: 'Reporte mensual de ventas - Hora extra', 
+                date: new Date(currentYear, currentMonth, 18), 
+                time: '15:30', 
+                recurrence: 'monthly',
+                department: 'ventas',
+                assignmentType: 'hora-extra',
+                overtime: { hours: 3, rate: '1.5x' },
+                description: 'Preparar y enviar el reporte mensual de ventas para la junta directiva.',
+                status: 'active'
+            }
+        ];
+
+        // Kanban tasks data
+        let kanbanTasks = [
+            { 
+                id: 1, 
+                title: 'Revisar documentación técnica', 
+                description: 'Revisar y actualizar la documentación del sistema de gestión',
+                department: 'ti',
+                dueDate: '2023-09-15',
+                assignees: ['JD', 'MG'],
+                status: 'pending',
+                priority: 'medium'
+            },
+            { 
+                id: 2, 
+                title: 'Actualizar base de datos', 
+                description: 'Migrar datos a la nueva versión del sistema',
+                department: 'ti',
+                dueDate: '2023-09-18',
+                assignees: ['CL'],
+                status: 'pending',
+                priority: 'low'
+            },
+            { 
+                id: 3, 
+                title: 'Desarrollar módulo de reportes', 
+                description: 'Crear nuevo módulo para generar reportes automatizados',
+                department: 'ti',
+                dueDate: '2023-09-20',
+                assignees: ['JD', 'MG', 'CL'],
+                status: 'progress',
+                priority: 'high'
+            },
+            { 
+                id: 4, 
+                title: 'Corregir errores de UI', 
+                description: 'Solucionar problemas de diseño en pantallas móviles',
+                department: 'ti',
+                dueDate: '2023-09-22',
+                assignees: ['MG'],
+                status: 'review',
+                priority: 'medium'
+            },
+            { 
+                id: 5, 
+                title: 'Implementar autenticación', 
+                description: 'Sistema de autenticación de dos factores',
+                department: 'ti',
+                dueDate: '2023-09-10',
+                assignees: ['JD', 'CL'],
+                status: 'completed',
+                priority: 'high'
+            }
+        ];
+
+        // Initialize application
+        function initApp() {
+            initCalendar();
+            renderKanbanView();
+            setupEventListeners();
+        }
+
+        // Initialize calendar
+        function initCalendar() {
+            updateCalendarHeader();
+            renderMonthView();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Mobile menu
+            document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.add('active');
+            });
+            
+            document.getElementById('close-sidebar').addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.remove('active');
+            });
+
+            // Navigation items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const view = this.dataset.view;
+                    switchMainView(view);
+                    
+                    // Update active nav item
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        nav.classList.remove('bg-blue-50', 'text-blue-600', 'border-l-4', 'border-blue-600');
+                    });
+                    this.classList.add('bg-blue-50', 'text-blue-600', 'border-l-4', 'border-blue-600');
+                    
+                    // Close sidebar on mobile
+                    if (window.innerWidth < 1024) {
+                        document.querySelector('.sidebar').classList.remove('active');
+                    }
+                });
+            });
+
+            // View toggles
+            document.querySelectorAll('.view-toggle').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.view-toggle').forEach(b => {
+                        b.classList.remove('bg-blue-600', 'text-white');
+                        b.classList.add('text-gray-600', 'hover:bg-gray-100');
+                    });
+                    this.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                    this.classList.add('bg-blue-600', 'text-white');
+                    
+                    currentView = this.dataset.view;
+                    switchView(currentView);
+                });
+            });
+
+            // Navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const direction = parseInt(this.dataset.direction);
+                    navigatePeriod(direction);
+                });
+            });
+
+            // Modal
+            document.getElementById('add-item-btn').addEventListener('click', openModal);
+            document.getElementById('add-kanban-task').addEventListener('click', openKanbanTaskModal);
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('cancel-btn').addEventListener('click', closeModal);
+            document.getElementById('save-btn').addEventListener('click', saveItem);
+            
+            // Detail Modal
+            document.getElementById('close-detail-modal').addEventListener('click', closeDetailModal);
+            document.getElementById('cancel-item-btn').addEventListener('click', cancelItem);
+            document.getElementById('delete-item-btn').addEventListener('click', deleteItem);
+            document.getElementById('edit-item-btn').addEventListener('click', editItem);
+            
+            // Item type selection
+            document.querySelectorAll('.item-type-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const type = this.dataset.type;
+                    showForm(type);
+                });
+            });
+
+            // Departamento change for tasks
+            document.getElementById('task-department').addEventListener('change', function() {
+                updatePositions(this.value);
+            });
+
+            // Tipo de asignación change
+            document.getElementById('task-assignment-type').addEventListener('change', function() {
+                updateAssignmentUI(this.value);
+            });
+
+            // Recurrence options
+            document.querySelectorAll('.recurrence-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const parent = this.closest('.bg-gray-50');
+                    parent.querySelectorAll('.recurrence-option').forEach(opt => {
+                        opt.classList.remove('bg-green-600', 'bg-purple-600', 'text-white');
+                        opt.classList.add('bg-white', 'border', 'border-gray-300', 'hover:bg-gray-50');
+                    });
+                    
+                    if (parent.id.includes('meeting')) {
+                        this.classList.add('bg-purple-600', 'text-white');
+                    } else {
+                        this.classList.add('bg-green-600', 'text-white');
+                    }
+                    
+                    const showDateRange = this.dataset.value !== 'none';
+                    const dateRange = parent.querySelector('#date-range') || parent.querySelector('#meeting-date-range');
+                    if (dateRange) {
+                        dateRange.classList.toggle('hidden', !showDateRange);
+                    }
+                });
+            });
+        }
+
+        // Switch between main views (calendar, kanban, etc.)
+        function switchMainView(view) {
+            document.querySelectorAll('.view-container').forEach(v => v.classList.add('hidden'));
+            document.getElementById(`${view}-view`).classList.remove('hidden');
+            currentMainView = view;
+            
+            const titles = {
+                'calendar': 'Calendario Mensual',
+                'kanban': 'Tablero Kanban',
+                'tasks': 'Gestión de Tareas',
+                'tickets': 'Tickets de Soporte',
+                'meetings': 'Reuniones Programadas',
+                'departments': 'Departamentos',
+                'notices': 'Avisos y Notificaciones',
+                'reports': 'Reportes y Estadísticas'
+            };
+            document.getElementById('view-title').textContent = titles[view];
+            
+            if (view === 'kanban') {
+                renderKanbanView();
+            }
+        }
+
+        // Update positions based on department
+        function updatePositions(department) {
+            const positionSelect = document.getElementById('task-position');
+            positionSelect.innerHTML = '<option value="">Seleccionar puesto</option>';
+            
+            if (department && departments[department]) {
+                departments[department].positions.forEach(position => {
+                    const option = document.createElement('option');
+                    option.value = position;
+                    option.textContent = position;
+                    positionSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Update UI based on assignment type
+        function updateAssignmentUI(type) {
+            // Hide all assignment-specific sections
+            document.getElementById('position-selector').classList.add('hidden');
+            document.getElementById('users-selector').classList.add('hidden');
+            document.getElementById('overtime-config').classList.add('hidden');
+            
+            // Show relevant section
+            if (type === 'puesto') {
+                document.getElementById('position-selector').classList.remove('hidden');
+            } else if (type === 'colaborativa') {
+                document.getElementById('users-selector').classList.remove('hidden');
+            } else if (type === 'hora-extra') {
+                document.getElementById('overtime-config').classList.remove('hidden');
+            }
+        }
+
+        // Check if date is holiday
+        function isHoliday(date) {
+            const dateString = date.toISOString().split('T')[0];
+            return holidays.includes(dateString);
+        }
+
+        // Get work schedule for position
+        function getWorkSchedule(position) {
+            return workSchedules[position] || workSchedules['default'];
+        }
+
+        // Switch between views
+        function switchView(view) {
+            document.querySelectorAll('.calendar-view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(`${view}-view`).classList.remove('hidden');
+            
+            const titles = {
+                'month': 'Calendario Mensual',
+                'week': 'Calendario Semanal', 
+                'day': 'Vista Diaria'
+            };
+            document.getElementById('view-title').textContent = titles[view];
+            
+            if (view === 'month') {
+                renderMonthView();
+            } else if (view === 'week') {
+                renderWeekView();
+            } else if (view === 'day') {
+                renderDayView();
+            }
+        }
+
+        // Navigate between periods
+        function navigatePeriod(direction) {
+            if (currentView === 'month') {
+                currentMonth += direction;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                } else if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                renderMonthView();
+            } else if (currentView === 'week') {
+                currentWeek += direction;
+                renderWeekView();
+            } else if (currentView === 'day') {
+                currentDay += direction;
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                if (currentDay < 1) {
+                    currentMonth--;
+                    if (currentMonth < 0) {
+                        currentMonth = 11;
+                        currentYear--;
+                    }
+                    currentDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+                } else if (currentDay > daysInMonth) {
+                    currentDay = 1;
+                    currentMonth++;
+                    if (currentMonth > 11) {
+                        currentMonth = 0;
+                        currentYear++;
+                    }
+                }
+                renderDayView();
+            }
+            updateCalendarHeader();
+        }
+
+        // Update calendar header
+        function updateCalendarHeader() {
+            if (currentView === 'month') {
+                document.getElementById('current-period').textContent = `${months[currentMonth]} ${currentYear}`;
+            } else if (currentView === 'week') {
+                const weekStart = new Date(currentYear, currentMonth, currentWeek * 7 + 1);
+                const weekEnd = new Date(currentYear, currentMonth, currentWeek * 7 + 7);
+                document.getElementById('current-period').textContent = 
+                    `Semana ${currentWeek + 1} - ${weekStart.getDate()} al ${weekEnd.getDate()} de ${months[currentMonth]}`;
+            } else if (currentView === 'day') {
+                const date = new Date(currentYear, currentMonth, currentDay);
+                document.getElementById('current-period').textContent = 
+                    `${days[date.getDay()]}, ${currentDay} de ${months[currentMonth]} ${currentYear}`;
+            }
+        }
+
+        // Render month view
+        function renderMonthView() {
+            const monthDays = document.getElementById('month-days');
+            monthDays.innerHTML = '';
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startDay = firstDay === 0 ? 6 : firstDay - 1;
+
+            // Empty cells for days before the first day
+            for (let i = 0; i < startDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.classList.add('min-h-20', 'lg:min-h-24', 'p-1', 'lg:p-2', 'border', 'border-gray-200', 'rounded-lg', 'bg-gray-50');
+                monthDays.appendChild(emptyDay);
+            }
+
+            // Days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                const dayDate = new Date(currentYear, currentMonth, day);
+                
+                dayElement.classList.add('min-h-20', 'lg:min-h-24', 'p-1', 'lg:p-2', 'border', 'border-gray-200', 'rounded-lg', 'hover:border-blue-300', 'transition-colors');
+                
+                // Check if it's today
+                if (day === currentDate.getDate() && currentMonth === currentDate.getMonth() && currentYear === currentDate.getFullYear()) {
+                    dayElement.classList.add('bg-blue-50', 'border-blue-300');
+                }
+                
+                // Check if it's holiday
+                if (isHoliday(dayDate)) {
+                    dayElement.classList.add('bg-red-50', 'border-red-200');
+                }
+
+                const dayNumber = document.createElement('div');
+                dayNumber.classList.add('font-medium', 'text-gray-900', 'mb-1', 'flex', 'justify-between', 'items-center', 'text-sm', 'lg:text-base');
+                
+                if (day === currentDate.getDate() && currentMonth === currentDate.getMonth() && currentYear === currentDate.getFullYear()) {
+                    dayNumber.classList.add('text-blue-600');
+                }
+                
+                if (isHoliday(dayDate)) {
+                    dayNumber.classList.add('text-red-600');
+                }
+                
+                dayNumber.innerHTML = `
+                    <span>${day}</span>
+                    ${isHoliday(dayDate) ? '<i class="fas fa-star text-red-500 text-xs"></i>' : ''}
+                `;
+                dayElement.appendChild(dayNumber);
+
+                const dayEvents = getEventsForDate(dayDate);
+                if (dayEvents.length > 0) {
+                    const eventIndicators = document.createElement('div');
+                    eventIndicators.classList.add('space-y-1');
+                    
+                    dayEvents.slice(0, 2).forEach(event => {
+                        const indicator = document.createElement('div');
+                        indicator.classList.add('text-xs', 'flex', 'items-center', 'space-x-1', 'event-indicator', 'p-1', 'rounded');
+                        indicator.addEventListener('click', () => showEventDetails(event));
+                        
+                        const dot = document.createElement('div');
+                        dot.classList.add('w-2', 'h-2', 'rounded-full', 'flex-shrink-0');
+                        
+                        if (event.type === 'ticket') dot.classList.add('bg-blue-500');
+                        else if (event.type === 'task') {
+                            if (event.assignmentType === 'hora-extra') {
+                                dot.classList.add('bg-yellow-500');
+                            } else {
+                                dot.classList.add('bg-warning');
+                            }
+                        }
+                        else if (event.type === 'meeting') dot.classList.add('bg-success');
+                        if (event.recurrence) dot.classList.add('bg-purple-500');
+                        
+                        const text = document.createElement('span');
+                        text.classList.add('truncate', 'text-gray-600', 'flex-1');
+                        text.textContent = event.title.substring(0, 10) + '...';
+                        
+                        indicator.appendChild(dot);
+                        indicator.appendChild(text);
+                        eventIndicators.appendChild(indicator);
+                    });
+                    
+                    if (dayEvents.length > 2) {
+                        const moreIndicator = document.createElement('div');
+                        moreIndicator.classList.add('text-xs', 'text-gray-500', 'p-1');
+                        moreIndicator.textContent = `+${dayEvents.length - 2} más`;
+                        eventIndicators.appendChild(moreIndicator);
+                    }
+                    
+                    dayElement.appendChild(eventIndicators);
+                }
+
+                monthDays.appendChild(dayElement);
+            }
+        }
+
+        // Render week view
+        function renderWeekView() {
+            // Update week day headers
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(currentYear, currentMonth, currentWeek * 7 + i + 1);
+                const dayElement = document.getElementById(`week-day-${i}`);
+                const dayName = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][day.getDay()];
+                dayElement.textContent = `${dayName} ${day.getDate()}`;
+                
+                if (isHoliday(day)) {
+                    dayElement.classList.add('text-red-600');
+                } else {
+                    dayElement.classList.remove('text-red-600');
+                }
+            }
+
+            // Render time slots
+            const weekHours = document.getElementById('week-hours');
+            weekHours.innerHTML = '';
+
+            for (let hour = 8; hour <= 18; hour++) {
+                const timeRow = document.createElement('div');
+                timeRow.classList.add('grid', 'grid-cols-8', 'gap-1', 'lg:gap-2', 'mb-2');
+                
+                // Time label
+                const timeLabel = document.createElement('div');
+                timeLabel.classList.add('text-xs', 'lg:text-sm', 'text-gray-500', 'py-2');
+                timeLabel.textContent = `${hour}:00`;
+                timeRow.appendChild(timeLabel);
+
+                // Day columns
+                for (let day = 0; day < 7; day++) {
+                    const dayCell = document.createElement('div');
+                    dayCell.classList.add('min-h-10', 'lg:min-h-12', 'border', 'border-gray-200', 'rounded', 'p-1');
+                    
+                    const dayDate = new Date(currentYear, currentMonth, currentWeek * 7 + day + 1);
+                    dayDate.setHours(hour);
+                    
+                    // Highlight holidays
+                    if (isHoliday(dayDate)) {
+                        dayCell.classList.add('bg-red-50', 'border-red-200');
+                    }
+                    
+                    const hourEvents = getEventsForDateAndHour(dayDate, hour);
+                    hourEvents.forEach(event => {
+                        const eventElement = document.createElement('div');
+                        eventElement.classList.add('text-xs', 'p-1', 'rounded', 'mb-1', 'text-white', 'truncate', 'cursor-pointer');
+                        eventElement.addEventListener('click', () => showEventDetails(event));
+                        
+                        if (event.type === 'ticket') eventElement.classList.add('bg-blue-500');
+                        else if (event.type === 'task') {
+                            if (event.assignmentType === 'hora-extra') {
+                                eventElement.classList.add('bg-yellow-500');
+                            } else {
+                                eventElement.classList.add('bg-warning');
+                            }
+                        }
+                        else if (event.type === 'meeting') eventElement.classList.add('bg-success');
+                        
+                        eventElement.textContent = event.title.substring(0, 15) + '...';
+                        dayCell.appendChild(eventElement);
+                    });
+                    
+                    timeRow.appendChild(dayCell);
+                }
+                
+                weekHours.appendChild(timeRow);
+            }
+        }
+
+        // Render day view
+        function renderDayView() {
+            const dayTitle = document.getElementById('day-title');
+            const dayDate = new Date(currentYear, currentMonth, currentDay);
+            dayTitle.textContent = `${days[dayDate.getDay()]}, ${currentDay} de ${months[currentMonth]} ${currentYear}`;
+
+            const dayEventsContainer = document.getElementById('day-events');
+            dayEventsContainer.innerHTML = '';
+
+            // Add holiday notice
+            if (isHoliday(dayDate)) {
+                const holidayNotice = document.createElement('div');
+                holidayNotice.classList.add('bg-red-50', 'border', 'border-red-200', 'rounded-lg', 'p-4', 'mb-4');
+                holidayNotice.innerHTML = `
+                    <div class="flex items-center space-x-2 text-red-800">
+                        <i class="fas fa-star"></i>
+                        <span class="font-medium">Día festivo</span>
+                    </div>
+                    <p class="text-sm text-red-600 mt-1">Este día es considerado festivo. Las tareas programadas pueden requerir aprobación especial.</p>
+                `;
+                dayEventsContainer.appendChild(holidayNotice);
+            }
+
+            const dayEvents = getEventsForDate(dayDate);
+            
+            if (dayEvents.length === 0) {
+                dayEventsContainer.innerHTML = `
+                    <div class="text-center py-8 lg:py-12 text-gray-500">
+                        <i class="fas fa-calendar-day text-2xl lg:text-4xl mb-4"></i>
+                        <p class="text-base lg:text-lg">No hay eventos programados para hoy</p>
+                        <p class="text-xs lg:text-sm">Haz clic en "Nuevo elemento" para agregar uno</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort events by time
+            dayEvents.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+
+            dayEvents.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.classList.add('flex', 'items-start', 'space-x-3', 'lg:space-x-4', 'p-3', 'lg:p-4', 'border', 'border-gray-200', 'rounded-lg', 'mb-3', 'cursor-pointer');
+                eventElement.addEventListener('click', () => showEventDetails(event));
+                
+                const icon = document.createElement('div');
+                icon.classList.add('w-8', 'h-8', 'lg:w-10', 'lg:h-10', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-white', 'flex-shrink-0');
+                
+                if (event.type === 'ticket') icon.classList.add('bg-blue-500');
+                else if (event.type === 'task') {
+                    if (event.assignmentType === 'hora-extra') {
+                        icon.classList.add('bg-yellow-500');
+                    } else {
+                        icon.classList.add('bg-warning');
+                    }
+                }
+                else if (event.type === 'meeting') icon.classList.add('bg-success');
+                
+                icon.innerHTML = `<i class="fas fa-${event.type === 'ticket' ? 'ticket-alt' : event.type === 'task' ? 'tasks' : 'users'} text-sm lg:text-base"></i>`;
+                
+                const content = document.createElement('div');
+                content.classList.add('flex-1');
+                
+                const header = document.createElement('div');
+                header.classList.add('flex', 'flex-col', 'lg:flex-row', 'lg:justify-between', 'lg:items-start', 'mb-2');
+                
+                const title = document.createElement('h4');
+                title.classList.add('font-medium', 'text-gray-900', 'text-sm', 'lg:text-base', 'mb-1', 'lg:mb-0');
+                title.textContent = event.title;
+                
+                const time = document.createElement('span');
+                time.classList.add('text-xs', 'lg:text-sm', 'text-gray-500');
+                time.textContent = event.time || 'Todo el día';
+                
+                header.appendChild(title);
+                header.appendChild(time);
+                
+                const details = document.createElement('div');
+                details.classList.add('text-xs', 'lg:text-sm', 'text-gray-600', 'space-y-1');
+                
+                // Department info
+                if (event.department) {
+                    const deptInfo = document.createElement('div');
+                    deptInfo.classList.add('flex', 'items-center', 'space-x-2');
+                    deptInfo.innerHTML = `
+                        <span class="font-medium">Departamento:</span>
+                        <span class="bg-gray-100 px-2 py-1 rounded text-xs">${departments[event.department]?.name || event.department}</span>
+                    `;
+                    details.appendChild(deptInfo);
+                }
+                
+                // Assignment type info
+                if (event.assignmentType) {
+                    const assignmentInfo = document.createElement('div');
+                    assignmentInfo.classList.add('flex', 'items-center', 'space-x-2');
+                    
+                    let assignmentText = '';
+                    if (event.assignmentType === 'puesto') {
+                        assignmentText = `Puesto: ${event.position}`;
+                    } else if (event.assignmentType === 'colaborativa') {
+                        assignmentText = 'Tarea colaborativa';
+                    } else if (event.assignmentType === 'hora-extra') {
+                        assignmentText = `Hora extra (${event.overtime?.hours}h - ${event.overtime?.rate})`;
+                    } else {
+                        assignmentText = 'Asignación general';
+                    }
+                    
+                    assignmentInfo.innerHTML = `
+                        <span class="font-medium">Tipo:</span>
+                        <span>${assignmentText}</span>
+                    `;
+                    details.appendChild(assignmentInfo);
+                }
+                
+                // Recurrence info
+                if (event.recurrence) {
+                    const recurrenceInfo = document.createElement('div');
+                    recurrenceInfo.classList.add('flex', 'items-center', 'space-x-2');
+                    recurrenceInfo.innerHTML = `
+                        <i class="fas fa-sync-alt text-purple-500"></i>
+                        <span class="text-purple-600">Recurrente (${event.recurrence})</span>
+                    `;
+                    details.appendChild(recurrenceInfo);
+                }
+                
+                content.appendChild(header);
+                content.appendChild(details);
+                
+                eventElement.appendChild(icon);
+                eventElement.appendChild(content);
+                dayEventsContainer.appendChild(eventElement);
+            });
+        }
+
+        // Get events for a specific date
+        function getEventsForDate(date) {
+            const dayEvents = [];
+            
+            events.forEach(event => {
+                if (event.date.getDate() === date.getDate() && 
+                    event.date.getMonth() === date.getMonth() && 
+                    event.date.getFullYear() === date.getFullYear()) {
+                    dayEvents.push(event);
+                }
+                
+                if (event.recurrence && isRecurringEventOnDate(event, date)) {
+                    dayEvents.push(event);
+                }
+            });
+            
+            return dayEvents;
+        }
+
+        // Get events for specific date and hour
+        function getEventsForDateAndHour(date, hour) {
+            return getEventsForDate(date).filter(event => {
+                if (!event.time) return false;
+                const eventHour = parseInt(event.time.split(':')[0]);
+                return eventHour === hour;
+            });
+        }
+
+        // Check recurring events
+        function isRecurringEventOnDate(event, date) {
+            if (!event.recurrence) return false;
+            const eventDate = event.date;
+            if (date < eventDate) return false;
+            
+            switch(event.recurrence) {
+                case 'daily': return true;
+                case 'weekly': return date.getDay() === eventDate.getDay();
+                case 'monthly': return date.getDate() === eventDate.getDate();
+                case 'yearly': return date.getMonth() === eventDate.getMonth() && date.getDate() === eventDate.getDate();
+                default: return false;
+            }
+        }
+
+        // Render Kanban view
+        function renderKanbanView() {
+            // Clear all columns
+            document.getElementById('pending-column').innerHTML = '';
+            document.getElementById('progress-column').innerHTML = '';
+            document.getElementById('review-column').innerHTML = '';
+            document.getElementById('completed-column').innerHTML = '';
+            
+            // Count tasks per status
+            const pendingCount = kanbanTasks.filter(task => task.status === 'pending').length;
+            const progressCount = kanbanTasks.filter(task => task.status === 'progress').length;
+            const reviewCount = kanbanTasks.filter(task => task.status === 'review').length;
+            const completedCount = kanbanTasks.filter(task => task.status === 'completed').length;
+            
+            // Update counts
+            document.getElementById('pending-count').textContent = pendingCount;
+            document.getElementById('progress-count').textContent = progressCount;
+            document.getElementById('review-count').textContent = reviewCount;
+            document.getElementById('completed-count').textContent = completedCount;
+            
+            // Render tasks in their respective columns
+            kanbanTasks.forEach(task => {
+                const taskElement = createKanbanTaskElement(task);
+                document.getElementById(`${task.status}-column`).appendChild(taskElement);
+            });
+        }
+
+        // Create Kanban task element
+        function createKanbanTaskElement(task) {
+            const taskElement = document.createElement('div');
+            taskElement.classList.add('kanban-card', 'bg-white', 'p-4', 'rounded-lg', 'border', 'border-gray-200', 'shadow-sm', 'cursor-move');
+            taskElement.setAttribute('draggable', 'true');
+            taskElement.setAttribute('ondragstart', 'drag(event)');
+            taskElement.setAttribute('id', `kanban-task-${task.id}`);
+            taskElement.addEventListener('click', () => showKanbanTaskDetails(task));
+            
+            // Priority badge color
+            let priorityColor = 'gray';
+            if (task.priority === 'high') priorityColor = 'red';
+            else if (task.priority === 'medium') priorityColor = 'yellow';
+            else if (task.priority === 'low') priorityColor = 'green';
+            
+            taskElement.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-medium text-gray-900 text-sm">${task.title}</h4>
+                    <div class="flex space-x-1">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${departments[task.department]?.name || task.department}</span>
+                        <span class="bg-${priorityColor}-100 text-${priorityColor}-800 text-xs px-2 py-1 rounded">${task.priority}</span>
+                    </div>
+                </div>
+                <p class="text-gray-600 text-xs mb-3">${task.description}</p>
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-1 text-xs text-gray-500">
+                        <i class="fas fa-calendar"></i>
+                        <span>${new Date(task.dueDate).getDate()} ${months[new Date(task.dueDate).getMonth()]}</span>
+                    </div>
+                    <div class="flex -space-x-2">
+                        ${task.assignees.map(assignee => 
+                            `<div class="w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs">${assignee}</div>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            
+            return taskElement;
+        }
+
+        // Kanban drag and drop functions
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+            ev.target.classList.add('dragging');
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(data);
+            draggedElement.classList.remove('dragging');
+            
+            // Get the task ID from the element ID
+            const taskId = parseInt(data.replace('kanban-task-', ''));
+            
+            // Determine the new status based on the column
+            let newStatus = 'pending';
+            if (ev.target.id === 'progress-column' || ev.target.closest('#progress-column')) {
+                newStatus = 'progress';
+            } else if (ev.target.id === 'review-column' || ev.target.closest('#review-column')) {
+                newStatus = 'review';
+            } else if (ev.target.id === 'completed-column' || ev.target.closest('#completed-column')) {
+                newStatus = 'completed';
+            }
+            
+            // Update the task status
+            updateKanbanTaskStatus(taskId, newStatus);
+            
+            // Only append if dropping on a column (not on another card)
+            if (ev.target.classList.contains('kanban-column') || 
+                ev.target.id.includes('column') || 
+                ev.target.classList.contains('space-y-3')) {
+                ev.target.appendChild(draggedElement);
+            } else if (ev.target.closest('.space-y-3')) {
+                ev.target.closest('.space-y-3').appendChild(draggedElement);
+            }
+            
+            // Update counts
+            renderKanbanView();
+        }
+
+        // Update Kanban task status
+        function updateKanbanTaskStatus(taskId, newStatus) {
+            const taskIndex = kanbanTasks.findIndex(task => task.id === taskId);
+            if (taskIndex !== -1) {
+                kanbanTasks[taskIndex].status = newStatus;
+            }
+        }
+
+        // Show event details in modal
+        function showEventDetails(event) {
+            document.getElementById('detail-title').textContent = event.title;
+            
+            let content = '';
+            if (event.type === 'ticket') {
+                content = `
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                <i class="fas fa-ticket-alt"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Ticket</h4>
+                                <p class="text-sm text-gray-500">${event.date.toLocaleDateString()} ${event.time ? ' - ' + event.time : ''}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+                                <div class="bg-${event.priority === 'alta' ? 'red' : event.priority === 'media' ? 'yellow' : 'green'}-100 text-${event.priority === 'alta' ? 'red' : event.priority === 'media' ? 'yellow' : 'green'}-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                                    ${event.priority}
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                                <div class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                                    ${departments[event.department]?.name || event.department}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                            <p class="text-gray-600">${event.description}</p>
+                        </div>
+                    </div>
+                `;
+            } else if (event.type === 'task') {
+                content = `
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Tarea</h4>
+                                <p class="text-sm text-gray-500">${event.date.toLocaleDateString()} ${event.time ? ' - ' + event.time : ''}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                                <div class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                                    ${departments[event.department]?.name || event.department}
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de asignación</label>
+                                <div class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                                    ${event.assignmentType === 'puesto' ? 'Por puesto' : event.assignmentType === 'colaborativa' ? 'Colaborativa' : event.assignmentType === 'hora-extra' ? 'Hora extra' : 'General'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${event.assignmentType === 'puesto' ? `
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Puesto específico</label>
+                                <div class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                                    ${event.position}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${event.assignmentType === 'hora-extra' ? `
+                            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                <label class="block text-sm font-medium text-yellow-800 mb-2">Configuración de Hora Extra</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-yellow-700 mb-1">Horas extra aprobadas</label>
+                                        <div class="text-yellow-800">${event.overtime.hours} horas</div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-yellow-700 mb-1">Tarifa extra</label>
+                                        <div class="text-yellow-800">${event.overtime.rate}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${event.recurrence ? `
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-sync-alt text-purple-500"></i>
+                                <span class="text-purple-600">Recurrente (${event.recurrence})</span>
+                            </div>
+                        ` : ''}
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Detalle de la tarea</label>
+                            <p class="text-gray-600">${event.description}</p>
+                        </div>
+                    </div>
+                `;
+            } else if (event.type === 'meeting') {
+                content = `
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Reunión</h4>
+                                <p class="text-sm text-gray-500">${event.date.toLocaleDateString()} ${event.time ? ' - ' + event.time : ''}</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Departamentos invitados</label>
+                            <div class="flex flex-wrap gap-2">
+                                ${event.departments.map(dept => 
+                                    `<span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">${departments[dept]?.name || dept}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        
+                        ${event.recurrence ? `
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-sync-alt text-purple-500"></i>
+                                <span class="text-purple-600">Recurrente (${event.recurrence})</span>
+                            </div>
+                        ` : ''}
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Objetivo de la reunión</label>
+                            <p class="text-gray-600">${event.description}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('detail-content').innerHTML = content;
+            document.getElementById('detail-modal').classList.remove('hidden');
+            
+            // Store the event ID for editing/deleting
+            editingItemId = event.id;
+        }
+
+        // Show Kanban task details
+        function showKanbanTaskDetails(task) {
+            document.getElementById('detail-title').textContent = task.title;
+            
+            // Priority badge color
+            let priorityColor = 'gray';
+            if (task.priority === 'high') priorityColor = 'red';
+            else if (task.priority === 'medium') priorityColor = 'yellow';
+            else if (task.priority === 'low') priorityColor = 'green';
+            
+            const content = `
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold">Tarea Kanban</h4>
+                            <p class="text-sm text-gray-500">Vence: ${new Date(task.dueDate).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                            <div class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                                ${departments[task.department]?.name || task.department}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+                            <div class="bg-${priorityColor}-100 text-${priorityColor}-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                                ${task.priority}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                        <div class="bg-${task.status === 'pending' ? 'gray' : task.status === 'progress' ? 'blue' : task.status === 'review' ? 'yellow' : 'green'}-100 text-${task.status === 'pending' ? 'gray' : task.status === 'progress' ? 'blue' : task.status === 'review' ? 'yellow' : 'green'}-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                            ${task.status === 'pending' ? 'Pendiente' : task.status === 'progress' ? 'En Progreso' : task.status === 'review' ? 'Revisión' : 'Completado'}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                        <p class="text-gray-600">${task.description}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Asignados</label>
+                        <div class="flex space-x-2">
+                            ${task.assignees.map(assignee => 
+                                `<div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">${assignee}</div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detail-content').innerHTML = content;
+            document.getElementById('detail-modal').classList.remove('hidden');
+            
+            // Store the task ID for editing/deleting
+            editingItemId = task.id;
+        }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('item-modal').classList.remove('hidden');
+            document.getElementById('type-selection').classList.remove('hidden');
+            showForm('ticket'); // Default form
+            editingItemId = null;
+        }
+
+        function openKanbanTaskModal() {
+            document.getElementById('item-modal').classList.remove('hidden');
+            document.getElementById('type-selection').classList.add('hidden');
+            showForm('task');
+            editingItemId = null;
+        }
+
+        function closeModal() {
+            document.getElementById('item-modal').classList.add('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+            editingItemId = null;
+        }
+
+        function showForm(type) {
+            // Hide all forms
+            document.querySelectorAll('.item-form').forEach(form => form.classList.add('hidden'));
+            
+            // Show selected form
+            document.getElementById(`${type}-form`).classList.remove('hidden');
+            
+            // Update modal title
+            const titles = {
+                'ticket': 'Nuevo Ticket',
+                'task': 'Nueva Tarea', 
+                'meeting': 'Nueva Reunión'
+            };
+            document.getElementById('modal-title').textContent = titles[type];
+            
+            // Reset task form UI
+            if (type === 'task') {
+                updatePositions('ti'); // Default department
+                updateAssignmentUI('general');
+            }
+        }
+
+        function saveItem() {
+            alert('Elemento guardado exitosamente');
+            closeModal();
+            
+            // In a real application, you would save to a database here
+            // and then update the UI accordingly
+        }
+
+        function cancelItem() {
+            if (confirm('¿Estás seguro de que quieres cancelar este elemento?')) {
+                // Find and update the item status
+                if (currentMainView === 'calendar') {
+                    const eventIndex = events.findIndex(event => event.id === editingItemId);
+                    if (eventIndex !== -1) {
+                        events[eventIndex].status = 'cancelled';
+                        alert('Elemento cancelado exitosamente');
+                    }
+                } else if (currentMainView === 'kanban') {
+                    const taskIndex = kanbanTasks.findIndex(task => task.id === editingItemId);
+                    if (taskIndex !== -1) {
+                        kanbanTasks[taskIndex].status = 'cancelled';
+                        alert('Tarea cancelada exitosamente');
+                        renderKanbanView();
+                    }
+                }
+                
+                closeDetailModal();
+                
+                // Refresh the current view
+                if (currentMainView === 'calendar') {
+                    if (currentView === 'month') renderMonthView();
+                    else if (currentView === 'week') renderWeekView();
+                    else if (currentView === 'day') renderDayView();
+                }
+            }
+        }
+
+        function deleteItem() {
+            if (confirm('¿Estás seguro de que quieres eliminar este elemento? Esta acción no se puede deshacer.')) {
+                // Find and remove the item
+                if (currentMainView === 'calendar') {
+                    events = events.filter(event => event.id !== editingItemId);
+                    alert('Elemento eliminado exitosamente');
+                } else if (currentMainView === 'kanban') {
+                    kanbanTasks = kanbanTasks.filter(task => task.id !== editingItemId);
+                    alert('Tarea eliminada exitosamente');
+                    renderKanbanView();
+                }
+                
+                closeDetailModal();
+                
+                // Refresh the current view
+                if (currentMainView === 'calendar') {
+                    if (currentView === 'month') renderMonthView();
+                    else if (currentView === 'week') renderWeekView();
+                    else if (currentView === 'day') renderDayView();
+                }
+            }
+        }
+
+        function editItem() {
+            // Close detail modal and open edit modal
+            closeDetailModal();
+            
+            // In a real application, you would populate the form with the item data
+            // For this example, we'll just open the modal
+            if (currentMainView === 'calendar') {
+                const event = events.find(e => e.id === editingItemId);
+                if (event) {
+                    openModal();
+                    showForm(event.type);
+                    // Here you would populate the form with event data
+                }
+            } else if (currentMainView === 'kanban') {
+                openKanbanTaskModal();
+                // Here you would populate the form with task data
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

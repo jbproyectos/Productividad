@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Día | Panel de Tareas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#64748B',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444',
+                        surface: '#F8FAFC',
+                        border: '#E2E8F0'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div class="min-h-screen">
+        <!-- Header Simple -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar-day text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Mi Día</h1>
+                            <p class="text-sm text-gray-500">Panel de tareas personales</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <div class="font-medium text-gray-900">Juan Pérez</div>
+                            <div class="text-sm text-gray-500">Desarrollador - TI</div>
+                        </div>
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+                            JP
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Resumen del Día -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <!-- Tarjeta de Resumen -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Hoy</h3>
+                        <span class="text-2xl font-bold text-blue-600" id="today-date">18 Sep</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Total tareas</span>
+                            <span class="font-semibold" id="total-tasks">8</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Completadas</span>
+                            <span class="font-semibold text-success" id="completed-tasks">3</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Pendientes</span>
+                            <span class="font-semibold text-warning" id="pending-tasks">5</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">En progreso</span>
+                            <span class="font-semibold text-primary" id="inprogress-tasks">2</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progreso del Día -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Progreso del Día</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                <span>Completado</span>
+                                <span id="progress-percent">38%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-success h-2 rounded-full" style="width: 38%" id="progress-bar"></div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900" id="remaining-tasks">5</div>
+                            <div class="text-sm text-gray-500">tareas pendientes</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Próximas Reuniones -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Próximas Reuniones</h3>
+                    <div class="space-y-3" id="next-meetings">
+                        <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                            <i class="fas fa-users text-blue-600"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Reunión de equipo</div>
+                                <div class="text-xs text-gray-500">10:30 AM</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                            <i class="fas fa-users text-blue-600"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Revisión semanal</div>
+                                <div class="text-xs text-gray-500">03:00 PM</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tickets Activos -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Tickets Activos</h3>
+                    <div class="space-y-3" id="active-tickets">
+                        <div class="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
+                            <i class="fas fa-ticket-alt text-orange-600"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">#1234 - Error en login</div>
+                                <div class="text-xs text-gray-500">Alta prioridad</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
+                            <i class="fas fa-ticket-alt text-orange-600"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">#1235 - Actualización UI</div>
+                                <div class="text-xs text-gray-500">Media prioridad</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros Rápidos -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="filter-btn px-4 py-2 bg-blue-600 text-white rounded-lg font-medium" data-filter="all">
+                    Todas
+                </button>
+                <button class="filter-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" data-filter="pending">
+                    Pendientes
+                </button>
+                <button class="filter-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" data-filter="inprogress">
+                    En Progreso
+                </button>
+                <button class="filter-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" data-filter="completed">
+                    Completadas
+                </button>
+                <button class="filter-btn px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" data-filter="high">
+                    Alta Prioridad
+                </button>
+            </div>
+
+            <!-- Lista de Tareas del Día -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900">Mis Tareas de Hoy</h2>
+                    <p class="text-gray-500">Lista de actividades asignadas para hoy</p>
+                </div>
+
+                <div class="divide-y divide-gray-200" id="tasks-list">
+                    <!-- Tareas se cargan dinámicamente aquí -->
+                </div>
+
+                <!-- Estado vacío -->
+                <div id="empty-state" class="hidden p-12 text-center">
+                    <i class="fas fa-check-circle text-4xl text-gray-300 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">¡No hay tareas!</h3>
+                    <p class="text-gray-500">No tienes tareas asignadas para hoy.</p>
+                </div>
+            </div>
+
+            <!-- Mini Calendario -->
+            <div class="mt-8 bg-white rounded-xl border border-gray-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Próximos Días</h3>
+                    <div class="flex space-x-2">
+                        <button class="calendar-nav w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50" data-direction="-1">
+                            <i class="fas fa-chevron-left text-gray-600 text-sm"></i>
+                        </button>
+                        <button class="calendar-nav w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50" data-direction="1">
+                            <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-7 gap-2 text-center" id="mini-calendar">
+                    <!-- Mini calendario se carga dinámicamente -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Detalles de Tarea -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl w-full max-w-md mx-4">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold" id="task-modal-title">Detalles de Tarea</h3>
+            </div>
+            <div class="p-6 space-y-4" id="task-modal-content">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+                <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50" onclick="closeTaskModal()">
+                    Cerrar
+                </button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700" id="complete-task-btn">
+                    Marcar como Completada
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos del usuario actual
+        const currentUser = {
+            id: 'user-1',
+            name: 'Juan Pérez',
+            position: 'Desarrollador',
+            department: 'ti'
+        };
+
+        // Tareas del usuario
+        const userTasks = [
+            {
+                id: 1,
+                title: 'Revisar documentación técnica del nuevo módulo',
+                description: 'Revisar y aprobar la documentación del módulo de autenticación',
+                type: 'task',
+                status: 'pending',
+                priority: 'high',
+                time: '09:00',
+                estimatedHours: 2,
+                department: 'ti',
+                assignedTo: ['user-1'],
+                createdAt: new Date(),
+                dueDate: new Date()
+            },
+            {
+                id: 2,
+                title: 'Corregir error en formulario de login',
+                description: 'El formulario de login no valida correctamente las credenciales',
+                type: 'ticket',
+                status: 'inprogress',
+                priority: 'high',
+                time: '11:00',
+                estimatedHours: 1,
+                department: 'ti',
+                assignedTo: ['user-1'],
+                ticketId: '#1234',
+                createdAt: new Date()
+            },
+            {
+                id: 3,
+                title: 'Actualizar librerías de desarrollo',
+                description: 'Actualizar React y dependencias a la última versión estable',
+                type: 'task',
+                status: 'completed',
+                priority: 'medium',
+                time: '14:00',
+                estimatedHours: 3,
+                department: 'ti',
+                assignedTo: ['user-1'],
+                completedAt: new Date()
+            },
+            {
+                id: 4,
+                title: 'Preparar presentación para reunión de equipo',
+                description: 'Preparar slides con los avances del sprint actual',
+                type: 'task',
+                status: 'pending',
+                priority: 'medium',
+                time: '15:30',
+                estimatedHours: 1,
+                department: 'ti',
+                assignedTo: ['user-1']
+            },
+            {
+                id: 5,
+                title: 'Revisar pull request #45',
+                description: 'Revisar cambios en el módulo de reportes',
+                type: 'task',
+                status: 'pending',
+                priority: 'low',
+                time: '16:00',
+                estimatedHours: 1,
+                department: 'ti',
+                assignedTo: ['user-1']
+            },
+            {
+                id: 6,
+                title: 'Optimizar consultas de base de datos',
+                description: 'Mejorar performance de consultas en módulo de usuarios',
+                type: 'task',
+                status: 'inprogress',
+                priority: 'medium',
+                time: '10:00',
+                estimatedHours: 4,
+                department: 'ti',
+                assignedTo: ['user-1']
+            },
+            {
+                id: 7,
+                title: 'Configurar ambiente de testing',
+                description: 'Configurar CI/CD para pruebas automáticas',
+                type: 'task',
+                status: 'completed',
+                priority: 'low',
+                time: '13:00',
+                estimatedHours: 2,
+                department: 'ti',
+                assignedTo: ['user-1'],
+                completedAt: new Date()
+            },
+            {
+                id: 8,
+                title: 'Documentar API endpoints',
+                description: 'Crear documentación para nuevos endpoints del API',
+                type: 'task',
+                status: 'completed',
+                priority: 'medium',
+                time: '08:30',
+                estimatedHours: 2,
+                department: 'ti',
+                assignedTo: ['user-1'],
+                completedAt: new Date()
+            }
+        ];
+
+        // Reuniones del usuario
+        const userMeetings = [
+            {
+                id: 1,
+                title: 'Reunión de equipo TI',
+                time: '10:30',
+                duration: 60,
+                type: 'team',
+                participants: ['user-1', 'user-2', 'user-3']
+            },
+            {
+                id: 2,
+                title: 'Revisión semanal de proyectos',
+                time: '15:00',
+                duration: 45,
+                type: 'review',
+                participants: ['user-1', 'user-4']
+            }
+        ];
+
+        // Tickets del usuario
+        const userTickets = [
+            {
+                id: 1,
+                ticketId: '#1234',
+                title: 'Error en formulario de login',
+                priority: 'high',
+                status: 'inprogress',
+                assignedTo: 'user-1'
+            },
+            {
+                id: 2,
+                ticketId: '#1235',
+                title: 'Actualización interfaz de usuario',
+                priority: 'medium',
+                status: 'pending',
+                assignedTo: 'user-1'
+            }
+        ];
+
+        // Filtro actual
+        let currentFilter = 'all';
+
+        // Inicializar la aplicación
+        function initUserPanel() {
+            updateDate();
+            renderStats();
+            renderTasks();
+            renderMeetings();
+            renderTickets();
+            renderMiniCalendar();
+            setupEventListeners();
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Filtros
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('bg-blue-600', 'text-white');
+                        b.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    });
+                    this.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    this.classList.add('bg-blue-600', 'text-white');
+                    
+                    currentFilter = this.dataset.filter;
+                    renderTasks();
+                });
+            });
+
+            // Navegación del mini calendario
+            document.querySelectorAll('.calendar-nav').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // En una implementación real, esto cambiaría la semana
+                    console.log('Navegar calendario:', this.dataset.direction);
+                });
+            });
+        }
+
+        // Actualizar fecha actual
+        function updateDate() {
+            const today = new Date();
+            const options = { day: 'numeric', month: 'short' };
+            document.getElementById('today-date').textContent = 
+                today.toLocaleDateString('es-ES', options);
+        }
+
+        // Renderizar estadísticas
+        function renderStats() {
+            const total = userTasks.length;
+            const completed = userTasks.filter(task => task.status === 'completed').length;
+            const pending = userTasks.filter(task => task.status === 'pending').length;
+            const inprogress = userTasks.filter(task => task.status === 'inprogress').length;
+            const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('completed-tasks').textContent = completed;
+            document.getElementById('pending-tasks').textContent = pending;
+            document.getElementById('inprogress-tasks').textContent = inprogress;
+            document.getElementById('progress-percent').textContent = `${progressPercent}%`;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            document.getElementById('remaining-tasks').textContent = pending + inprogress;
+        }
+
+        // Renderizar tareas
+        function renderTasks() {
+            const tasksList = document.getElementById('tasks-list');
+            const emptyState = document.getElementById('empty-state');
+            
+            // Filtrar tareas según el filtro actual
+            let filteredTasks = userTasks;
+            
+            if (currentFilter === 'pending') {
+                filteredTasks = userTasks.filter(task => task.status === 'pending');
+            } else if (currentFilter === 'inprogress') {
+                filteredTasks = userTasks.filter(task => task.status === 'inprogress');
+            } else if (currentFilter === 'completed') {
+                filteredTasks = userTasks.filter(task => task.status === 'completed');
+            } else if (currentFilter === 'high') {
+                filteredTasks = userTasks.filter(task => task.priority === 'high');
+            }
+
+            if (filteredTasks.length === 0) {
+                tasksList.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            tasksList.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            tasksList.innerHTML = '';
+
+            filteredTasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                tasksList.appendChild(taskElement);
+            });
+        }
+
+        // Crear elemento de tarea
+        function createTaskElement(task) {
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'p-4 hover:bg-gray-50 transition-colors cursor-pointer';
+            taskDiv.addEventListener('click', () => openTaskModal(task));
+
+            const statusIcon = getStatusIcon(task.status);
+            const priorityBadge = getPriorityBadge(task.priority);
+            const timeBadge = getTimeBadge(task.time);
+
+            taskDiv.innerHTML = `
+                <div class="flex items-start space-x-4">
+                    <div class="flex items-center space-x-3 flex-1">
+                        <button class="status-toggle w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${getStatusClass(task.status)}" 
+                                data-task-id="${task.id}">
+                            ${statusIcon}
+                        </button>
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-1">
+                                <h4 class="font-medium text-gray-900 ${task.status === 'completed' ? 'line-through text-gray-500' : ''}">
+                                    ${task.title}
+                                </h4>
+                                ${task.type === 'ticket' ? 
+                                    `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Ticket</span>` : ''}
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">${task.description}</p>
+                            <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                ${timeBadge}
+                                <span>${task.estimatedHours}h estimado</span>
+                                ${priorityBadge}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        ${task.status !== 'completed' ? `
+                            <button class="action-btn w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-100" 
+                                    data-action="start" data-task-id="${task.id}">
+                                <i class="fas fa-play text-gray-600 text-xs"></i>
+                            </button>
+                        ` : ''}
+                        <button class="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-100">
+                            <i class="fas fa-ellipsis-h text-gray-600 text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Agregar event listeners a los botones de acción
+            const statusToggle = taskDiv.querySelector('.status-toggle');
+            statusToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleTaskStatus(task.id);
+            });
+
+            if (task.status !== 'completed') {
+                const actionBtn = taskDiv.querySelector('[data-action="start"]');
+                actionBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    startTask(task.id);
+                });
+            }
+
+            return taskDiv;
+        }
+
+        // Renderizar reuniones
+        function renderMeetings() {
+            const meetingsContainer = document.getElementById('next-meetings');
+            meetingsContainer.innerHTML = '';
+
+            userMeetings.forEach(meeting => {
+                const meetingElement = document.createElement('div');
+                meetingElement.className = 'flex items-center space-x-3 p-3 bg-blue-50 rounded-lg';
+                meetingElement.innerHTML = `
+                    <i class="fas fa-users text-blue-600"></i>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">${meeting.title}</div>
+                        <div class="text-xs text-gray-500">${meeting.time} - ${meeting.duration}min</div>
+                    </div>
+                `;
+                meetingsContainer.appendChild(meetingElement);
+            });
+        }
+
+        // Renderizar tickets
+        function renderTickets() {
+            const ticketsContainer = document.getElementById('active-tickets');
+            ticketsContainer.innerHTML = '';
+
+            userTickets.forEach(ticket => {
+                const priorityColor = ticket.priority === 'high' ? 'red' : 'orange';
+                const ticketElement = document.createElement('div');
+                ticketElement.className = `flex items-center space-x-3 p-3 bg-${priorityColor}-50 rounded-lg`;
+                ticketElement.innerHTML = `
+                    <i class="fas fa-ticket-alt text-${priorityColor}-600"></i>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">${ticket.ticketId} - ${ticket.title}</div>
+                        <div class="text-xs text-gray-500">${ticket.priority === 'high' ? 'Alta' : 'Media'} prioridad</div>
+                    </div>
+                `;
+                ticketsContainer.appendChild(ticketElement);
+            });
+        }
+
+        // Renderizar mini calendario
+        function renderMiniCalendar() {
+            const calendarContainer = document.getElementById('mini-calendar');
+            calendarContainer.innerHTML = '';
+
+            // Días de la semana
+            const weekdays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+            weekdays.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'text-sm font-medium text-gray-500 py-2';
+                dayElement.textContent = day;
+                calendarContainer.appendChild(dayElement);
+            });
+
+            // Días del mes (ejemplo simplificado)
+            for (let i = 1; i <= 7; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'text-sm py-2 rounded-lg cursor-pointer hover:bg-gray-100';
+                
+                if (i === 4) { // Día actual
+                    dayElement.classList.add('bg-blue-600', 'text-white', 'font-medium');
+                } else if (i === 6) { // Día con muchas tareas
+                    dayElement.classList.add('bg-orange-100', 'text-orange-800', 'font-medium');
+                }
+                
+                dayElement.textContent = 17 + i;
+                calendarContainer.appendChild(dayElement);
+            }
+        }
+
+        // Funciones de utilidad
+        function getStatusIcon(status) {
+            const icons = {
+                'pending': '<i class="fas fa-clock text-gray-400 text-xs"></i>',
+                'inprogress': '<i class="fas fa-play text-blue-600 text-xs"></i>',
+                'completed': '<i class="fas fa-check text-white text-xs"></i>'
+            };
+            return icons[status] || icons.pending;
+        }
+
+        function getStatusClass(status) {
+            const classes = {
+                'pending': 'border-gray-300 hover:border-blue-500',
+                'inprogress': 'border-blue-500 bg-blue-500',
+                'completed': 'border-green-500 bg-green-500'
+            };
+            return classes[status] || classes.pending;
+        }
+
+        function getPriorityBadge(priority) {
+            const colors = {
+                'high': 'red',
+                'medium': 'yellow',
+                'low': 'green'
+            };
+            const texts = {
+                'high': 'Alta',
+                'medium': 'Media', 
+                'low': 'Baja'
+            };
+            const color = colors[priority] || 'gray';
+            return `<span class="bg-${color}-100 text-${color}-800 text-xs px-2 py-1 rounded">${texts[priority]}</span>`;
+        }
+
+        function getTimeBadge(time) {
+            return `<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">${time}</span>`;
+        }
+
+        // Funciones de acción
+        function toggleTaskStatus(taskId) {
+            const task = userTasks.find(t => t.id === taskId);
+            if (task) {
+                if (task.status === 'completed') {
+                    task.status = 'pending';
+                } else {
+                    task.status = 'completed';
+                    task.completedAt = new Date();
+                }
+                renderStats();
+                renderTasks();
+            }
+        }
+
+        function startTask(taskId) {
+            const task = userTasks.find(t => t.id === taskId);
+            if (task && task.status === 'pending') {
+                task.status = 'inprogress';
+                renderStats();
+                renderTasks();
+            }
+        }
+
+        // Modal de tarea
+        function openTaskModal(task) {
+            document.getElementById('task-modal-title').textContent = task.title;
+            
+            const modalContent = document.getElementById('task-modal-content');
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <p class="text-gray-600">${task.description}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                            <p class="text-gray-600">${task.time}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Duración estimada</label>
+                            <p class="text-gray-600">${task.estimatedHours} horas</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+                            ${getPriorityBadge(task.priority)}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(task.status)}">
+                                ${getStatusText(task.status)}
+                            </span>
+                        </div>
+                    </div>
+                    ${task.type === 'ticket' ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ticket ID</label>
+                            <p class="text-gray-600 font-mono">${task.ticketId}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            const completeBtn = document.getElementById('complete-task-btn');
+            if (task.status === 'completed') {
+                completeBtn.textContent = 'Marcar como Pendiente';
+                completeBtn.classList.remove('bg-blue-600');
+                completeBtn.classList.add('bg-gray-600');
+            } else {
+                completeBtn.textContent = 'Marcar como Completada';
+                completeBtn.classList.remove('bg-gray-600');
+                completeBtn.classList.add('bg-blue-600');
+            }
+
+            completeBtn.onclick = () => {
+                toggleTaskStatus(task.id);
+                closeTaskModal();
+            };
+
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('task-modal').classList.add('hidden');
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'inprogress': 'bg-blue-100 text-blue-800',
+                'completed': 'bg-green-100 text-green-800'
+            };
+            return classes[status] || classes.pending;
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'pending': 'Pendiente',
+                'inprogress': 'En Progreso',
+                'completed': 'Completada'
+            };
+            return texts[status] || texts.pending;
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', initUserPanel);
+    </script>
+</body>
+</html>
