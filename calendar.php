@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Verificar la conexión
+// Verificar la conexións
 try {
     if (!isset($pdo)) {
         throw new Exception("Variable \$pdo no definida");
