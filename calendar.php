@@ -1,8 +1,7 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-ini_set('memory_limit', '256M'); // o '512M' si es muy grande
-
+ini_set('memory_limit', '256M');
 
 session_start();
 include 'includes/conexionbd.php';
@@ -44,12 +43,30 @@ try {
     die("Error al cargar datos del usuario: " . $e->getMessage());
 }
 
+//var_dump($usuario);
+
+// Decodificar las áreas del usuario (JSON)
+$areas_usuario = [];
+if (!empty($usuario['subarea'])) {
+    // Intentar decodificar como JSON
+    $areas_json = json_decode($usuario['subarea'], true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($areas_json)) {
+        // Es JSON válido, usar los IDs
+        $areas_usuario = array_map('intval', $areas_json);
+    } else {
+        // Si no es JSON válido, intentar como string simple
+        $areas_usuario = array_filter(array_map('trim', explode(',', $usuario['subarea'])));
+        $areas_usuario = array_map('intval', $areas_usuario);
+    }
+}
+
 // Tickets
 try {
     $stmt_tickets = $pdo->prepare("
         SELECT t.*, a.nombre as area_nombre, cat.nombre_cat as categoria_nombre,
                d.nombre as donde_nombre, dd.nombre as detalle_donde_nombre,
-               sc.nombre_cat as subcategoria_nombre, u.nombre as nombre_solicitante, u.whatsapp, t.estado, st.nombre_sucat
+               sc.nombre_cat as subcategoria_nombre, u.nombre as nombre_solicitante, 
+               u.whatsapp, t.estado, st.nombre_sucat
         FROM tickets t
         LEFT JOIN areas a ON t.area = a.id
         LEFT JOIN categoria_servicio_ticket cat ON t.categoria_id = cat.id
@@ -69,47 +86,163 @@ try {
     $tickets = [];
 }
 
+// Tareas cíclicas
 try {
-    // Primero obtenemos el nombre de la subárea del usuario
-    $stmt_area = $pdo->prepare("SELECT nombre FROM subareas WHERE id = :id");
-    $stmt_area->execute(['id' => $usuario['subarea']]);
-    $nombre_subarea = $stmt_area->fetchColumn();
+    $tareas_ciclicas = [];
 
-    if ($nombre_subarea) {
-        // Ahora buscamos tareas cíclicas comparando por nombre
-// Consulta alternativa - SIN JOIN, luego buscamos los nombres
-$stmt_tc = $pdo->prepare("
-    SELECT *
-    FROM tareas_instancias ti
-    WHERE ti.area = :nombre_subarea
-        AND ti.fecha >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
-    ORDER BY ti.fecha, ti.hora
-");
-        $stmt_tc->execute(['nombre_subarea' => $nombre_subarea]);
-        $tareas_ciclicas = $stmt_tc->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($areas_usuario)) {
+        // Obtener nombres de las áreas del usuario
+        $placeholders = str_repeat('?,', count($areas_usuario) - 1) . '?';
+        $stmt_nombres = $pdo->prepare("
+            SELECT id, nombre 
+            FROM subareas 
+            WHERE id IN ($placeholders)
+        ");
+        $stmt_nombres->execute($areas_usuario);
+        $nombres_areas = $stmt_nombres->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($nombres_areas)) {
+            // Crear array de nombres de áreas
+            $nombres_array = array_column($nombres_areas, 'nombre');
+
+            // Crear condiciones para la consulta
+            $conditions = [];
+            $params = [];
+
+            // Buscar por nombre exacto
+            foreach ($nombres_array as $nombre) {
+                $conditions[] = "ti.area = ?";
+                $params[] = $nombre;
+            }
+
+            if (!empty($conditions)) {
+                $where_clause = "(" . implode(" OR ", $conditions) . ")";
+
+                // Agregar parámetro para el intervalo de tiempo
+                $params[] = date('Y-m-d', strtotime('-1 month'));
+
+                $sql = "
+                    SELECT ti.*, 
+                           sa.nombre as nombre_area
+                    FROM tareas_instancias ti
+                    LEFT JOIN subareas sa ON ti.area = sa.nombre
+                    WHERE $where_clause
+                    AND ti.fecha >= ?
+                    ORDER BY ti.fecha, ti.hora
+                ";
+
+                $stmt_tc = $pdo->prepare($sql);
+                $stmt_tc->execute($params);
+                $tareas_ciclicas = $stmt_tc->fetchAll(PDO::FETCH_ASSOC);
+
+                // También buscar tareas donde el usuario está asignado directamente
+                $sql_asignado = "
+                    SELECT ti.*, 
+                           sa.nombre as nombre_area
+                    FROM tareas_instancias ti
+                    LEFT JOIN subareas sa ON ti.area = sa.nombre
+                    WHERE ti.asignado_a = ?
+                    AND ti.fecha >= ?
+                    ORDER BY ti.fecha, ti.hora
+                ";
+
+                $stmt_asignado = $pdo->prepare($sql_asignado);
+                $stmt_asignado->execute([$user_id, date('Y-m-d', strtotime('-1 month'))]);
+                $tareas_asignadas = $stmt_asignado->fetchAll(PDO::FETCH_ASSOC);
+
+                // Combinar resultados, evitando duplicados
+                $ids_existentes = array_column($tareas_ciclicas, 'id');
+                foreach ($tareas_asignadas as $tarea_asignada) {
+                    if (!in_array($tarea_asignada['id'], $ids_existentes)) {
+                        $tareas_ciclicas[] = $tarea_asignada;
+                    }
+                }
+            }
+        }
     } else {
-        $tareas_ciclicas = [];
+        // Si no tiene áreas asignadas, buscar solo por usuario asignado
+        $stmt_tc = $pdo->prepare("
+            SELECT ti.*, 
+                   sa.nombre as nombre_area
+            FROM tareas_instancias ti
+            LEFT JOIN subareas sa ON ti.area = sa.nombre
+            WHERE ti.asignado_a = ?
+            AND ti.fecha >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+            ORDER BY ti.fecha, ti.hora
+        ");
+        $stmt_tc->execute([$user_id]);
+        $tareas_ciclicas = $stmt_tc->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (Exception $e) {
     $tareas_ciclicas = [];
     error_log("Error al cargar tareas cíclicas: " . $e->getMessage());
 }
 
-
-// Tareas
+// Tareas normales (ÚNICAS)
+// Tareas normales (ÚNICAS) - CON JOINS
 try {
-    $stmt_tareas = $pdo->prepare("
-        SELECT * FROM tareas 
-        WHERE id_usuario_asignado = :user_id 
-        AND estatus != 'completado'
-        ORDER BY fecha_creacion DESC
-    ");
+    echo "<!-- DEBUG: user_id = " . $user_id . " -->";
+    
+    $sql_tareas = "
+        SELECT 
+            t.*,
+            a.nombre as area_nombre,
+            c.nombre_cat as categoria_nombre,
+            s.nombre_sucat as subcategoria_nombre,
+            d.nombre as donde_nombre,
+            dd.nombre as detalle_donde_nombre,
+            re.nombre as responsable_ejecucion_nombre,
+            rs.nombre as responsable_supervision_nombre,
+            u.nombre as creador_nombre,
+            u.apellido as creador_apellido
+        FROM tareas t
+        LEFT JOIN areas a ON t.id_area = a.id
+        LEFT JOIN categoria_servicio_ticket c ON t.id_categoria = c.id
+        LEFT JOIN subcategorias_ticket s ON t.id_subcategoria = s.id
+        LEFT JOIN donde_ticket d ON t.id_donde = d.id
+        LEFT JOIN detalle_donde_ticket dd ON t.id_detalle_donde = dd.id
+        LEFT JOIN responsable_ejec re ON t.id_responsable_ejecucion = re.id
+        LEFT JOIN responsable_sup rs ON t.id_responsable_supervision = rs.id
+        LEFT JOIN usuarios u ON t.id_usuario_creador = u.id_Usuario
+        WHERE t.id_usuario_creador = :user_id 
+        AND t.estatus != 'completado'
+        ORDER BY t.fecha_creacion DESC
+    ";
+    
+    echo "<!-- DEBUG SQL: " . htmlspecialchars($sql_tareas) . " -->";
+    
+    $stmt_tareas = $pdo->prepare($sql_tareas);
     $stmt_tareas->bindParam(':user_id', $user_id);
     $stmt_tareas->execute();
+    
     $tareas = $stmt_tareas->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo "<!-- DEBUG: Número de tareas encontradas = " . count($tareas) . " -->";
+    
+    if (count($tareas) > 0) {
+        echo "<!-- DEBUG: Primera tarea: " . htmlspecialchars(json_encode($tareas[0])) . " -->";
+    } else {
+        // Prueba sin el filtro de estatus para ver si hay tareas
+        $stmt_test = $pdo->prepare("SELECT COUNT(*) FROM tareas WHERE id_usuario_creador = ?");
+        $stmt_test->execute([$user_id]);
+        $total_tareas = $stmt_test->fetchColumn();
+        echo "<!-- DEBUG: Total tareas del usuario (sin filtro estatus): " . $total_tareas . " -->";
+        
+        if ($total_tareas > 0) {
+            $stmt_test2 = $pdo->prepare("SELECT DISTINCT estatus FROM tareas WHERE id_usuario_creador = ?");
+            $stmt_test2->execute([$user_id]);
+            $estatus = $stmt_test2->fetchAll(PDO::FETCH_COLUMN);
+            echo "<!-- DEBUG: Estatus disponibles: " . implode(', ', $estatus) . " -->";
+        }
+    }
+    
 } catch (Exception $e) {
     $tareas = [];
+    echo "<!-- DEBUG ERROR: " . $e->getMessage() . " -->";
+    error_log("Error en consulta de tareas: " . $e->getMessage());
 }
+
+//var_dump($tareas);
 
 // Reuniones
 try {
@@ -126,7 +259,7 @@ try {
     $reuniones = [];
 }
 
-// Datos para formularios -formularios relaciones
+// Datos para formularios
 try {
     $areas = $pdo->query("SELECT id, nombre FROM areas ORDER BY nombre")->fetchAll(PDO::FETCH_ASSOC);
     $donde_tickets = $pdo->query("SELECT id, nombre, id_area FROM donde_ticket ORDER BY nombre")->fetchAll(PDO::FETCH_ASSOC);
@@ -137,9 +270,10 @@ try {
     $areas = $donde_tickets = $detalle_donde_tickets = $categorias = $subcategorias = [];
 }
 
-// Preparar eventos
+// Preparar eventos para el calendario
 $events = [];
 
+// Tickets
 foreach ($tickets as $ticket) {
     $fecha_evento = !empty($ticket['fecha_compromiso']) ? $ticket['fecha_compromiso'] : $ticket['fecha_creacion'];
 
@@ -162,6 +296,7 @@ foreach ($tickets as $ticket) {
     ];
 }
 
+// Tareas NORMALES (ÚNICAS)
 foreach ($tareas as $tarea) {
     $fecha_evento = !empty($tarea['fecha_compromiso']) ? $tarea['fecha_compromiso'] : $tarea['fecha_creacion'];
 
@@ -179,6 +314,7 @@ foreach ($tareas as $tarea) {
     ];
 }
 
+// Reuniones
 foreach ($reuniones as $reunion) {
     $events[] = [
         'id' => 'reunion_' . $reunion['id_reunion'],
@@ -193,44 +329,20 @@ foreach ($reuniones as $reunion) {
     ];
 }
 
-
-// Tareas cíclicas - CORREGIDO
-
-/* foreach ($tareas_ciclicas as $tarea_ciclica) {
-    $fecha_completa = $tarea_ciclica['fecha'] . ' ' . $tarea_ciclica['hora'];
-
-    $events[] = [
-        'id' => $tarea_ciclica['id'],
-        'type' => 'recurrent_task',
-        'title' => $tarea_ciclica['actividad'] ?? 'Tarea cíclica',
-        'date' => $fecha_completa, // Usar la fecha completa
-        'time' => isset($tarea_ciclica['hora']) ? date('H:i', strtotime($tarea_ciclica['hora'])) : '12:00',
-        'department' => strtolower($usuario['departamento_nombre'] ?? 'ti'),
-        'priority' => 'media',
-        'description' => $tarea_ciclica['actividad'] ?? 'Sin descripción',
-        'status' => $tarea_ciclica['estado'] ?? 'pendiente',
-        'categoria' => $tarea_ciclica['categoria'] ?? '',
-        'subcategoria' => $tarea_ciclica['subcategoria'] ?? '',
-        'puesto' => $tarea_ciclica['puesto'] ?? '',
-        'db_data' => $tarea_ciclica
-    ];
-} */
-
-
-    foreach ($tareas_ciclicas as $tarea_ciclica) {
+// Tareas CÍCLICAS
+foreach ($tareas_ciclicas as $tarea_ciclica) {
     // Combinar fecha y hora para crear un datetime completo
     $fecha_completa = $tarea_ciclica['fecha'] . ' ' . $tarea_ciclica['hora'];
-    
-    // Buscar nombre del usuario asignado (NO el usuario logueado)
-    $nombre_asignado = 'Sin asignar'; // Valor por defecto
-    
+
+    // Buscar nombre del usuario asignado
+    $nombre_asignado = 'Sin asignar';
+
     if (!empty($tarea_ciclica['asignado_a']) && is_numeric($tarea_ciclica['asignado_a'])) {
         try {
-            // BUSCAR EL USUARIO ASIGNADO, NO EL LOGUEADO
             $stmt_nombre = $pdo->prepare("SELECT nombre, apellido FROM usuarios WHERE Id_Usuario = ?");
             $stmt_nombre->execute([$tarea_ciclica['asignado_a']]);
-            $usuario_asignado = $stmt_nombre->fetch(PDO::FETCH_ASSOC); // Cambié el nombre de la variable
-            
+            $usuario_asignado = $stmt_nombre->fetch(PDO::FETCH_ASSOC);
+
             if ($usuario_asignado) {
                 $nombre_asignado = $usuario_asignado['nombre'];
                 if (!empty($usuario_asignado['apellido'])) {
@@ -243,29 +355,31 @@ foreach ($reuniones as $reunion) {
             $nombre_asignado = 'ID: ' . $tarea_ciclica['asignado_a'];
         }
     } elseif (!empty($tarea_ciclica['asignado_a']) && !is_numeric($tarea_ciclica['asignado_a'])) {
-        // Si tiene valor pero no es numérico, usar ese valor
         $nombre_asignado = $tarea_ciclica['asignado_a'];
     }
-    // Si no tiene asignado_a o está vacío, se queda con 'Sin asignar'
-    
-    // Crear db_data con el nombre del asignado
+
+    // Agregar información de área
+    $area_nombre = $tarea_ciclica['nombre_area'] ?? $tarea_ciclica['area'] ?? 'Sin área';
+
     $db_data = $tarea_ciclica;
-    $db_data['asignado_a'] = $nombre_asignado; // Usar el nombre encontrado
+    $db_data['asignado_a_nombre'] = $nombre_asignado;
+    $db_data['area_nombre'] = $area_nombre;
 
     $events[] = [
-        'id' => $tarea_ciclica['id'],
+        'id' => 'ciclica_' . $tarea_ciclica['id'],
         'type' => 'recurrent_task',
         'title' => $tarea_ciclica['actividad'] ?? 'Tarea cíclica',
         'date' => $fecha_completa,
         'time' => isset($tarea_ciclica['hora']) ? date('H:i', strtotime($tarea_ciclica['hora'])) : '12:00',
-        'department' => strtolower($usuario['departamento_nombre'] ?? 'ti'), // Este SÍ es el usuario logueado
+        'department' => strtolower($usuario['departamento_nombre'] ?? 'ti'),
         'priority' => 'media',
         'description' => $tarea_ciclica['actividad'] ?? 'Sin descripción',
         'status' => $tarea_ciclica['estado'] ?? 'pendiente',
         'categoria' => $tarea_ciclica['categoria'] ?? '',
         'subcategoria' => $tarea_ciclica['subcategoria'] ?? '',
         'puesto' => $tarea_ciclica['puesto'] ?? '',
-        'db_data' => $db_data  // Usar el array modificado con el nombre del asignado
+        'area_nombre' => $area_nombre,
+        'db_data' => $db_data
     ];
 }
 
@@ -378,21 +492,64 @@ $events_json = json_encode($events);
             </div>
 
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
-                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
-                    <div class="text-xl lg:text-2xl font-bold text-blue-600"><?php echo count($tickets); ?></div>
-                    <div class="text-gray-500 text-sm">Tickets activos</div>
+                <!-- Tickets Activos -->
+                <div class="group bg-white p-4 lg:p-6 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-100/50 transition-all duration-300">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="text-2xl lg:text-3xl font-light text-gray-900"><?php echo count($tickets); ?></div>
+                        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                            <i class="fas fa-ticket-alt text-blue-500 text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="font-medium text-gray-900">Tickets activos</div>
+                        <div class="text-xs text-gray-400">Soporte técnico</div>
+                    </div>
+                    <div class="mt-3 h-1 w-12 bg-blue-100 rounded-full group-hover:w-16 group-hover:bg-blue-500 transition-all"></div>
                 </div>
-                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
-                    <div class="text-xl lg:text-2xl font-bold text-warning"><?php echo count($tareas); ?></div>
-                    <div class="text-gray-500 text-sm">Tareas pendientes</div>
+
+                <!-- Tareas Pendientes -->
+                <div class="group bg-white p-4 lg:p-6 rounded-2xl border border-gray-100 hover:border-yellow-200 hover:shadow-lg hover:shadow-yellow-100/50 transition-all duration-300">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="text-2xl lg:text-3xl font-light text-gray-900"><?php echo count($tareas); ?></div>
+                        <div class="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
+                            <i class="fas fa-tasks text-yellow-600 text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="font-medium text-gray-900">Tareas pendientes</div>
+                        <div class="text-xs text-gray-400">Por completar hoy</div>
+                    </div>
+                    <div class="mt-3 h-1 w-12 bg-yellow-100 rounded-full group-hover:w-16 group-hover:bg-yellow-500 transition-all"></div>
                 </div>
-                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
-                    <div class="text-xl lg:text-2xl font-bold text-success"><?php echo count($reuniones); ?></div>
-                    <div class="text-gray-500 text-sm">Reuniones</div>
+
+                <!-- Reuniones -->
+                <div class="group bg-white p-4 lg:p-6 rounded-2xl border border-gray-100 hover:border-green-200 hover:shadow-lg hover:shadow-green-100/50 transition-all duration-300">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="text-2xl lg:text-3xl font-light text-gray-900"><?php echo count($reuniones); ?></div>
+                        <div class="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                            <i class="fas fa-video text-green-600 text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="font-medium text-gray-900">Reuniones</div>
+                        <div class="text-xs text-gray-400">Programadas</div>
+                    </div>
+                    <div class="mt-3 h-1 w-12 bg-green-100 rounded-full group-hover:w-16 group-hover:bg-green-500 transition-all"></div>
                 </div>
-                <div class="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
-                    <div class="text-xl lg:text-2xl font-bold text-purple-600"><?php echo count($tareas_ciclicas); ?></div>
-                    <div class="text-gray-500 text-sm">Tareas cíclicas</div>
+
+                <!-- Tareas Cíclicas -->
+                <div class="group bg-white p-4 lg:p-6 rounded-2xl border border-gray-100 hover:border-purple-200 hover:shadow-lg hover:shadow-purple-100/50 transition-all duration-300">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="text-2xl lg:text-3xl font-light text-gray-900"><?php echo count($tareas_ciclicas); ?></div>
+                        <div class="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                            <i class="fas fa-sync-alt text-purple-600 text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="font-medium text-gray-900">Tareas cíclicas</div>
+                        <div class="text-xs text-gray-400">Recurrentes</div>
+                    </div>
+                    <div class="mt-3 h-1 w-12 bg-purple-100 rounded-full group-hover:w-16 group-hover:bg-purple-500 transition-all"></div>
                 </div>
             </div>
 
@@ -421,7 +578,6 @@ $events_json = json_encode($events);
                             <span class="hidden lg:inline">Carga masiva</span>
                             <span class="lg:hidden">CSV</span>
                         </button>
-
                     </div>
                 </div>
 
@@ -442,7 +598,6 @@ $events_json = json_encode($events);
 
                 <div id="week-view" class="calendar-view hidden">
                     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-
                         <!-- Cabecera de días -->
                         <div class="grid grid-cols-8 gap-1 lg:gap-2 p-2 lg:p-4 bg-gray-50 border-b border-gray-200 overflow-x-auto">
                             <div class="text-xs lg:text-sm font-medium text-gray-500 py-2 min-w-12">Hora</div>
@@ -496,17 +651,21 @@ $events_json = json_encode($events);
                             <div class="font-medium text-sm lg:text-base">Tarea</div>
                             <div class="text-xs lg:text-sm text-gray-500">Actividad productiva</div>
                         </button>
-                        <button type="button" class="item-type-btn p-3 lg:p-4 border-2 border-gray-200 rounded-lg text-center hover:border-purple-500 transition-colors" data-type="meeting">
+                        <button type="button" class="item-type-btn p-3 lg:p-4 border-2 border-gray-200 rounded-lg text-center hover:border-purple-500 transition-colors relative overflow-hidden" data-type="meeting">
+                            <!-- Badge DEV -->
+                            <div class="absolute top-0 right-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg shadow-lg transform hover:scale-110 transition-transform z-10">
+                                <i class="fas fa-code mr-1 text-[8px]"></i>
+                                EN DESARROLLO
+                            </div>
+
                             <i class="fas fa-users text-xl lg:text-2xl text-purple-500 mb-2"></i>
                             <div class="font-medium text-sm lg:text-base">Reunión</div>
                             <div class="text-xs lg:text-sm text-gray-500">Encuentro programado</div>
-                            <span class="bg-yellow-200 text-yellow-800 text-xs font-semibold px-2 py-0.5 rounded-full">Dev</span>
-
                         </button>
                     </div>
                 </div>
 
-                <!-- Formularios (mantener los que ya tienes) -->
+                <!-- Formularios -->
                 <div id="ticket-form" class="item-form hidden">
                     <?php include 'tickets/ticket_form.php'; ?>
                 </div>
@@ -531,7 +690,7 @@ $events_json = json_encode($events);
         </div>
     </div>
 
-    <!-- Modal para ver detalles (contenido dinámico preservado) -->
+    <!-- Modal para ver detalles -->
     <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-xl w-full max-w-2xl mx-auto max-h-[90vh] overflow-hidden flex flex-col">
             <div class="flex justify-between items-center p-4 lg:p-6 border-b border-gray-200">
@@ -541,65 +700,37 @@ $events_json = json_encode($events);
                 </button>
             </div>
 
-            <!-- Contenido dinámico -->
             <div class="p-4 lg:p-6 space-y-6 flex-grow overflow-y-auto" id="detail-content"></div>
-
-            <!-- AGREGAR ESTE DIV PARA EL FOOTER DINÁMICO -->
             <div id="detail-footer"></div>
         </div>
     </div>
 
-    <div id="bulk-modal"
-        class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-
+    <div id="bulk-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
         <div class="bg-white w-11/12 max-w-lg rounded-xl shadow-lg p-6 space-y-4">
-
             <h2 class="text-xl font-semibold">Carga masiva desde CSV</h2>
-
-            <input id="csv-file"
-                type="file"
-                accept=".csv"
-                class="w-full border border-gray-300 rounded-lg p-3">
-
-            <div id="csv-error"
-                class="hidden text-red-600 text-sm font-medium">
-            </div>
-
-            <div id="csv-preview"
-                class="hidden max-h-60 overflow-auto border border-gray-200 rounded-lg p-3 text-sm">
-            </div>
-
+            <input id="csv-file" type="file" accept=".csv" class="w-full border border-gray-300 rounded-lg p-3">
+            <div id="csv-error" class="hidden text-red-600 text-sm font-medium"></div>
+            <div id="csv-preview" class="hidden max-h-60 overflow-auto border border-gray-200 rounded-lg p-3 text-sm"></div>
             <div class="flex justify-end space-x-3">
-                <button id="modal-cancel"
-                    class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
-                    Cancelar
-                </button>
-
-                <button id="modal-process"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Procesar
-                </button>
+                <button id="modal-cancel" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Cancelar</button>
+                <button id="modal-process" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Procesar</button>
             </div>
-
         </div>
     </div>
 
-
-
-    <!-- JavaScript externo -->
+    <!-- JavaScript -->
     <script>
         // Pasar datos de PHP a JavaScript
         const usuario = {
             id: <?php echo $user_id; ?>,
             nombre: "<?php echo $usuario['nombre']; ?>",
             apellido: "<?php echo $usuario['apellido']; ?>",
-            departamento: "<?php echo strtolower($usuario['departamento_nombre'] ?? 'ti'); ?>",
-            puesto: "<?php echo $usuario['puesto_nombre'] ?? 'Usuario'; ?>"
+            departamento: "<?php echo $usuario['departamento_nombre'] ?? 'ti'; ?>",
+            puesto: "<?php echo htmlspecialchars($usuario['puesto_nombre'] ?? 'Usuario'); ?>"
         };
 
         const eventsData = <?php echo $events_json; ?>;
     </script>
-
 
     <script>
         document.getElementById("bulk-upload-btn").onclick = () => {
@@ -613,7 +744,6 @@ $events_json = json_encode($events);
         document.getElementById("modal-process").onclick = () => processCSV();
 
         function processCSV() {
-
             const fileInput = document.getElementById("csv-file");
             const errorBox = document.getElementById("csv-error");
             const previewBox = document.getElementById("csv-preview");
@@ -631,62 +761,31 @@ $events_json = json_encode($events);
             const reader = new FileReader();
 
             reader.onload = (e) => {
-
                 let text = e.target.result;
-
-                // Convertir a UTF8 para reparar acentos raros
                 text = new TextDecoder("utf-8", {
                     fatal: false
-                }).decode(
-                    new TextEncoder().encode(text)
-                );
-
+                }).decode(new TextEncoder().encode(text));
                 const lines = text.split("\n").map(l => l.trim()).filter(l => l !== "");
-
-                // Detectar si usa tabulador o coma
                 const delimiter = lines[0].includes("\t") ? "\t" : ",";
-
-                const expected = [
-                    "PUESTO",
-                    "Actividad del Puesto",
-                    "Categoría de Servicio",
-                    "Subcategoría de Servicio",
-                    "1era Frecuencia",
-                    "Cuándo",
-                    "Cada cuánto",
-                    "Hora",
-                    "Subárea"
-                ];
-
+                const expected = ["PUESTO", "Actividad del Puesto", "Categoría de Servicio", "Subcategoría de Servicio", "1era Frecuencia", "Cuándo", "Cada cuánto", "Hora", "Subárea"];
                 const header = lines[0].split(delimiter).map(h => h.trim());
+                const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-                // Validar encabezados ignorando acentos y mayúsculas
-                const normalize = (s) =>
-                    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-                if (
-                    header.length !== expected.length ||
-                    !header.every((h, i) => normalize(h) === normalize(expected[i]))
-                ) {
-                    errorBox.textContent =
-                        "El CSV no coincide con las columnas requeridas. Encabezados detectados: " +
-                        header.join(", ");
+                if (header.length !== expected.length || !header.every((h, i) => normalize(h) === normalize(expected[i]))) {
+                    errorBox.textContent = "El CSV no coincide con las columnas requeridas. Encabezados detectados: " + header.join(", ");
                     errorBox.classList.remove("hidden");
                     return;
                 }
 
                 const data = [];
-
-                // Procesar filas
                 for (let i = 1; i < lines.length; i++) {
                     const row = lines[i].split(delimiter);
-
                     data.push({
                         puesto: row[0],
                         actividad: row[1],
                         categoria: row[2],
                         subcategoria: row[3],
-                        frecuencia: row[4], // "1era Frecuencia"
+                        frecuencia: row[4],
                         cuando: row[5],
                         cada_cuanto: row[6],
                         hora: row[7],
@@ -694,21 +793,14 @@ $events_json = json_encode($events);
                     });
                 }
 
-                previewBox.textContent =
-                    "Registros detectados: " + data.length + "\n\n" +
-                    JSON.stringify(data, null, 2);
-
+                previewBox.textContent = "Registros detectados: " + data.length + "\n\n" + JSON.stringify(data, null, 2);
                 previewBox.classList.remove("hidden");
-
                 sendDataToServer(data);
             };
-
-
             reader.readAsText(file, "UTF-8");
         }
 
         function sendDataToServer(data) {
-
             fetch("task/carga_masiva.php", {
                     method: "POST",
                     body: JSON.stringify(data),
@@ -727,16 +819,10 @@ $events_json = json_encode($events);
         }
     </script>
 
-
-    <script src="tickets/calendar.js"></script>
+    <script src="tickets/calendar.js?v=1"></script>
     <script src="tickets/stats.js"></script>
     <script src="tickets/functions.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <script>
-        eruda.init();
-    </script>
 </body>
 
 </html>

@@ -11,6 +11,7 @@ $ticketId = $input['id'] ?? null;
 $campo = $input['campo'] ?? null;
 $valor = $input['valor'] ?? null;
 
+
 if (!$ticketId || !$campo) {
     echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
     exit;

@@ -22,7 +22,7 @@ if (!$eval) die('No hay evaluación disponible');
 ?>
 
 
-<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+<div id="modalResultados" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full">
         <!-- Header con gradiente -->
         <div class="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-t-xl">
@@ -142,7 +142,7 @@ if (!$eval) die('No hay evaluación disponible');
         <div class="bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
             <div class="flex justify-end">
                 <button onclick="cerrarModalResultados()"
-                        class="px-6 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors duration-200">
+                    class="px-6 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors duration-200">
                     Cerrar
                 </button>
             </div>
@@ -151,7 +151,7 @@ if (!$eval) die('No hay evaluación disponible');
 </div>
 
 <script>
-function cerrarModalResultados() {
-    document.querySelector('#modalResultados').remove();
-}
+    function cerrarModalResultados() {
+        document.querySelector('#modalResultados').remove();
+    }
 </script>

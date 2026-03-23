@@ -3,6 +3,7 @@ session_start();
 include 'includes/conexionbd.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
 // Obtener datos para selects
 $puestos = $pdo->query("SELECT Id_puesto, nombre FROM puestos")->fetchAll(PDO::FETCH_ASSOC);
 $departamentos = $pdo->query("SELECT id, nombre FROM departamentos")->fetchAll(PDO::FETCH_ASSOC);
@@ -16,12 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
+    $whatsapp = trim($_POST['whatsapp'] ?? '');
     
     // Datos laborales (opcionales para usuario normal, requeridos para admin)
     $id_puesto = $_POST['id_puesto'] ?? null;
     $id_departamento = $_POST['id_departamento'] ?? null;
     $id_oficina = $_POST['id_oficina'] ?? null;
-    $subarea = $_POST['id_area'] ?? null;
+    $areas_seleccionadas = $_POST['areas'] ?? []; // Array de áreas múltiples
     
     $errors = [];
     
@@ -31,6 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Email válido es requerido";
     if (strlen($password) < 6) $errors[] = "La contraseña debe tener al menos 6 caracteres";
     if ($password !== $confirm_password) $errors[] = "Las contraseñas no coinciden";
+    
+    // Validar WhatsApp (opcional pero con formato si se proporciona)
+    if (!empty($whatsapp) && !preg_match('/^[0-9]{10,15}$/', $whatsapp)) {
+        $errors[] = "El número de WhatsApp debe contener solo números (10-15 dígitos)";
+    }
     
     // Verificar si el email ya existe
     try {
@@ -48,8 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rolActual = 2; // Rol de usuario por defecto
             $estatu = 1; // Activo
             
-            $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, apellido, email, contrasena, rolActual, Id_puesto, Id_departamento, Id_oficina, estatu, subarea) 
-                                       VALUES (:nombre, :apellido, :email, :password, :rol, :puesto, :departamento, :oficina, :estatu, :subarea)");
+            // Convertir array de áreas a JSON para almacenar en el campo subarea
+            $subarea_json = !empty($areas_seleccionadas) ? json_encode($areas_seleccionadas) : null;
+            
+            $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, apellido, email, contrasena, rolActual, Id_puesto, Id_departamento, Id_oficina, estatu, subarea, whatsapp) 
+                                   VALUES (:nombre, :apellido, :email, :password, :rol, :puesto, :departamento, :oficina, :estatu, :subarea, :whatsapp)");
             $stmt->bindParam(':nombre', $nombre);
             $stmt->bindParam(':apellido', $apellido);
             $stmt->bindParam(':email', $email);
@@ -59,7 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindParam(':departamento', $id_departamento);
             $stmt->bindParam(':oficina', $id_oficina);
             $stmt->bindParam(':estatu', $estatu);
-            $stmt->bindParam(':subarea', $subarea);
+            $stmt->bindParam(':subarea', $subarea_json);
+            $stmt->bindParam(':whatsapp', $whatsapp);
             $stmt->execute();
             
             $_SESSION['success'] = "Registro exitoso. Ahora puedes iniciar sesión.";
@@ -150,6 +161,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-repeat: no-repeat;
             background-size: 1.5em 1.5em;
         }
+        .areas-select {
+            height: 150px;
+            padding: 10px;
+        }
+        .areas-select option {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 4px;
+        }
+        .areas-select option:checked {
+            background-color: #3b82f6;
+            color: white;
+        }
     </style>
 </head>
 <body class="min-h-screen gradient-bg flex items-center justify-center p-4">
@@ -233,6 +257,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="email" class="floating-label">Email *</label>
                     </div>
 
+                    <!-- NUEVO CAMPO: WhatsApp -->
+                    <div class="form-group">
+                        <input type="tel" id="whatsapp" name="whatsapp" 
+                               class="form-input w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-focus transition-all duration-200"
+                               placeholder=" "
+                               value="<?php echo isset($_POST['whatsapp']) ? htmlspecialchars($_POST['whatsapp']) : ''; ?>"
+                               pattern="[0-9]{10,15}"
+                               title="Solo números, 10-15 dígitos">
+                        <label for="whatsapp" class="floating-label">WhatsApp de la empresa</label>
+                        <p class="text-xs text-gray-500 mt-1">Opcional - Solo números sin espacios ni símbolos</p>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="form-group">
                             <input type="password" id="password" name="password" required 
@@ -296,8 +332,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="">Selecciona tu departamento</option>
                                 <?php foreach ($departamentos as $departamento): ?>
                                     <option value="<?= $departamento['id'] ?>" <?= (isset($_POST['id_departamento']) && $_POST['id_departamento'] == $departamento['id']) ? 'selected' : '' ?>>
-                                  <?= htmlspecialchars($departamento['nombre']) ?>
-                              </option>
+                                        <?= htmlspecialchars($departamento['nombre']) ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -306,22 +342,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <select id="id_oficina" name="id_oficina" class="select-arrow w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-focus transition-all duration-200 appearance-none bg-white">
                                 <option value="">Selecciona tu oficina</option>
                                 <?php foreach ($oficinas as $oficina): ?>
-                                    <option value="<?= $oficina['id'] ?>" <?= (isset($_POST['id_oficina']) && $_POST['id_oficina'] == $oficina['Id_oficina']) ? 'selected' : '' ?>>
+                                    <option value="<?= $oficina['id'] ?>" <?= (isset($_POST['id_oficina']) && $_POST['id_oficina'] == $oficina['id']) ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($oficina['nombre']) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        
+                        <!-- NUEVO CAMPO: Selección múltiple de áreas -->
                         <div class="form-group">
-                          <select id="id_area" name="id_area" class="select-arrow w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-focus transition-all duration-200 appearance-none bg-white">
-                              <option value="">Selecciona tu área</option>
-                              <?php foreach ($areas as $area): ?>
-                                  <option value="<?= $area['id'] ?>" <?= (isset($_POST['id_area']) && $_POST['id_area'] == $area['id']) ? 'selected' : '' ?>>
-                                      <?= htmlspecialchars($area['nombre']) ?>
-                                  </option>
-                              <?php endforeach; ?>
-                          </select>
-                      </div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Selecciona tus áreas de responsabilidad
+                                <span class="text-xs text-gray-500">(Mantén Ctrl/Cmd para seleccionar múltiples)</span>
+                            </label>
+                            <select id="areas" name="areas[]" multiple 
+                                    class="areas-select w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-focus transition-all duration-200 appearance-none bg-white">
+                                <?php foreach ($areas as $area): ?>
+                                    <option value="<?= $area['id'] ?>" 
+                                        <?= (isset($_POST['areas']) && is_array($_POST['areas']) && in_array($area['id'], $_POST['areas'])) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($area['nombre']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Selecciona todas las áreas bajo tu responsabilidad</p>
+                        </div>
                     </div>
 
                     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
@@ -369,6 +413,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <p class="font-medium" id="review-email"></p>
                             </div>
                         </div>
+                        
+                        <!-- WhatsApp en revisión -->
+                        <div>
+                            <p class="text-sm text-gray-600">WhatsApp Empresa</p>
+                            <p class="font-medium" id="review-whatsapp">No especificado</p>
+                        </div>
+                        
                         <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <p class="text-sm text-gray-600">Puesto</p>
@@ -382,6 +433,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <p class="text-sm text-gray-600">Oficina</p>
                                 <p class="font-medium" id="review-oficina">No especificado</p>
                             </div>
+                        </div>
+                        
+                        <!-- Áreas en revisión -->
+                        <div>
+                            <p class="text-sm text-gray-600">Áreas de Responsabilidad</p>
+                            <p class="font-medium" id="review-areas">No especificado</p>
                         </div>
                     </div>
 
@@ -478,7 +535,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm_password').value;
                 if (password !== confirmPassword) {
+                    document.getElementById('confirm_password').classList.add('border-red-500');
                     isValid = false;
+                } else {
+                    document.getElementById('confirm_password').classList.remove('border-red-500');
+                }
+                
+                // Validate WhatsApp format if provided
+                const whatsapp = document.getElementById('whatsapp').value;
+                if (whatsapp && !/^[0-9]{10,15}$/.test(whatsapp)) {
+                    document.getElementById('whatsapp').classList.add('border-red-500');
+                    isValid = false;
+                } else {
+                    document.getElementById('whatsapp').classList.remove('border-red-500');
                 }
             }
             
@@ -486,9 +555,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function updateReview() {
+            // Personal information
             document.getElementById('review-nombre').textContent = 
                 `${document.getElementById('nombre').value} ${document.getElementById('apellido').value}`;
             document.getElementById('review-email').textContent = document.getElementById('email').value;
+            
+            // WhatsApp
+            const whatsapp = document.getElementById('whatsapp').value;
+            document.getElementById('review-whatsapp').textContent = 
+                whatsapp ? `+${whatsapp}` : 'No especificado';
             
             // Work information
             const puestoSelect = document.getElementById('id_puesto');
@@ -501,9 +576,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 departamentoSelect.value ? departamentoSelect.options[departamentoSelect.selectedIndex].text : 'No especificado';
             document.getElementById('review-oficina').textContent = 
                 oficinaSelect.value ? oficinaSelect.options[oficinaSelect.selectedIndex].text : 'No especificado';
+            
+            // Areas
+            const areasSelect = document.getElementById('areas');
+            let areasText = 'No especificado';
+            if (areasSelect.selectedOptions.length > 0) {
+                const areasArray = Array.from(areasSelect.selectedOptions).map(opt => opt.text);
+                areasText = areasArray.join(', ');
+            }
+            document.getElementById('review-areas').textContent = areasText;
         }
 
-        // Password strength and match functions (same as before)
+        // Password strength and match functions
         function checkPasswordStrength(password) {
             const bars = [
                 document.getElementById('strength-bar-1'),
@@ -561,9 +645,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (password === confirmPassword) {
                 matchText.textContent = 'Las contraseñas coinciden';
                 matchText.className = 'text-xs text-green-500';
+                document.getElementById('confirm_password').classList.remove('border-red-500');
             } else {
                 matchText.textContent = 'Las contraseñas no coinciden';
                 matchText.className = 'text-xs text-red-500';
+                document.getElementById('confirm_password').classList.add('border-red-500');
             }
         }
 
@@ -586,6 +672,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!this.value) {
                         this.nextElementSibling.classList.remove('top-0', 'text-xs', 'text-blue-600');
                     }
+                });
+            });
+            
+            // Initialize selects
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => {
+                select.addEventListener('focus', function() {
+                    this.parentElement.classList.add('ring-2', 'ring-blue-200');
+                });
+                
+                select.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('ring-2', 'ring-blue-200');
                 });
             });
         });

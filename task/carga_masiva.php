@@ -143,7 +143,6 @@ if (!$data) {
     exit;
 }
 
-// --- aseguramos que existe tabla de instancias (si no existe, puedes crear con SQL más abajo) ---
 
 // prepared statements
 $stmtInsertBase = $pdo->prepare("
