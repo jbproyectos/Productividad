@@ -817,7 +817,7 @@ if ($pestana_activa === 'unicas') {
                             <div class="mt-2 h-1 w-12 bg-yellow-200 rounded-full group-hover:w-16 transition-all duration-300"></div>
                         </a>
 
-                        <!-- En Proceso - Icono de carga/progreso -->
+                        <!-- En Proceso - Icono de carga/progresos -->
                         <a href="?tab=ciclicas&estado=En%20Proceso"
                             class="group bg-white p-3 md:p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300 <?= $filtro_estado === 'En Proceso' ? 'ring-2 ring-blue-500 ring-offset-2 border-blue-500 bg-blue-50' : '' ?>">
                             <div class="flex items-center justify-between mb-2">
