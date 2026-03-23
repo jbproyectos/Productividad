@@ -96,7 +96,7 @@ try {
     $reuniones = [];
 }
 
-// Datos para formularios CON RELACIONES
+// Datos para formularios CON RELACIONESs
 try {
     $areas = $pdo->query("SELECT id, nombre FROM areas ORDER BY nombre")->fetchAll(PDO::FETCH_ASSOC);
     $donde_tickets = $pdo->query("SELECT id, nombre, id_area FROM donde_ticket ORDER BY nombre")->fetchAll(PDO::FETCH_ASSOC);
