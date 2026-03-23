@@ -24,7 +24,7 @@ $nombre_departamento = $usuario['nombre_departamento'] ?? 'N/A';
 $nombre_usuario = $usuario['nombre'] . ' ' . $usuario['apellido'] ?? 'Usuario';
 $iniciales = substr($usuario['nombre'] ?? 'U', 0, 1) . substr($usuario['apellido'] ?? 'S', 0, 1);
 
-// ============ CRUD PARA DETALLE DONDE TICKET ============
+// ============ CRUD PARA DETALLE DONDE ============
 $mensaje = '';
 $accion = $_GET['accion'] ?? '';
 $id_editar = $_GET['id'] ?? '';
