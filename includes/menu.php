@@ -728,25 +728,35 @@ $menu_colapsado = isset($_COOKIE['menu_colapsado']) ? $_COOKIE['menu_colapsado']
                     <i class="fas fa-building"></i>
                     <span>Áreas</span>
                 </a>
+                <a href="<?= $raiz ?>catalogos/subarea.php" 
+                   class="submenu-item <?= (strpos($_SERVER['REQUEST_URI'], 'catalogos/subarea.php') !== false) ? 'active' : '' ?>">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Subáreas</span>
+                </a>
                 <a href="<?= $raiz ?>catalogos/categoria_servicio.php" 
                    class="submenu-item <?= (strpos($_SERVER['REQUEST_URI'], 'catalogos/categoria_servicio.php') !== false) ? 'active' : '' ?>">
                     <i class="fas fa-list-alt"></i>
                     <span>Categorías</span>
                 </a>
+                <a href="<?= $raiz ?>catalogos/subcategoria.php" 
+                class="submenu-item <?= (strpos($_SERVER['REQUEST_URI'], 'catalogos/subcategoria.php') !== false) ? 'active' : '' ?>">
+                    <i class="fas fa-tags"></i>
+                    <span>Subcategorías</span>
+                </a>
                 <a href="<?= $raiz ?>catalogos/donde.php" 
                    class="submenu-item <?= (strpos($_SERVER['REQUEST_URI'], 'catalogos/donde.php') !== false) ? 'active' : '' ?>">
                     <i class="fas fa-project-diagram"></i>
-                    <span>Proyectos</span>
-                </a>
-                <a href="<?= $raiz ?>catalogos/subcategoria.php" 
-                   class="submenu-item <?= (strpos($_SERVER['REQUEST_URI'], 'catalogos/subcategoria.php') !== false) ? 'active' : '' ?>">
-                    <i class="fas fa-tags"></i>
-                    <span>Subcategorías</span>
+                    <span>Donde</span>
                 </a>
                 <a href="<?= $raiz ?>catalogos/detalle_donde.php" 
                    class="submenu-item <?= (strpos($_SERVER['REQUEST_URI'], 'catalogos/detalle_donde.php') !== false) ? 'active' : '' ?>">
                     <i class="fas fa-file-alt"></i>
-                    <span>Detalle donde</span>
+                    <span>Detalle Donde</span>
+                </a>
+                <a href="<?= $raiz ?>catalogos/usuarios.php" 
+                   class="submenu-item <?= (strpos($_SERVER['REQUEST_URI'], 'catalogos/usuarios.php') !== false) ? 'active' : '' ?>">
+                    <i class="fas fa-user"></i>
+                    <span>Usuarios</span> <span class="badge badge-dev">Dev</span>
                 </a>
                 
             </div>
@@ -913,6 +923,7 @@ $menu_colapsado = isset($_COOKIE['menu_colapsado']) ? $_COOKIE['menu_colapsado']
         const currentPath = window.location.pathname;
         
         // Abrir submenús según la página actual
+        // console.log(currentPath.includes('/catalogos/'));
         if (currentPath.includes('/catalogos/')) {
             document.getElementById('submenu-tickets')?.classList.remove('hidden');
             document.getElementById('arrow-tickets')?.classList.add('rotated');
