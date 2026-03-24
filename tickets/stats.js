@@ -14,77 +14,77 @@ function mostrarToast(mensaje, tipo = 'info') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const estadoSelectModal = document.getElementById('estado-ticket-select');
-    const modal = document.getElementById('detail-modal');
+// document.addEventListener('DOMContentLoaded', () => {
+//     const estadoSelectModal = document.getElementById('estado-ticket-select');
+//     const modal = document.getElementById('detail-modal');
 
-    if (!estadoSelectModal) {
-        console.error('No se encontró el select de estado.');
-        return;
-    }
+//     if (!estadoSelectModal) {
+//         console.error('No se encontró el select de estado.');
+//         return;
+//     }
 
-    estadoSelectModal.addEventListener('change', function () {
-        const itemId = modal.getAttribute('data-ticket-id');
-        const tipo = modal.getAttribute('data-tipo');
-        const nuevoEstado = this.value;
+//     estadoSelectModal.addEventListener('change', function () {
+//         const itemId = modal.getAttribute('data-ticket-id');
+//         const tipo = modal.getAttribute('data-tipo');
+//         const nuevoEstado = this.value;
 
-        if (!itemId || !nuevoEstado || !tipo) {
-            console.warn('Falta itemId, estado o tipo.');
-            return;
-        }
+//         if (!itemId || !nuevoEstado || !tipo) {
+//             console.warn('Falta itemId, estado o tipo.');
+//             return;
+//         }
 
-        let endpoint = '';
+//         let endpoint = '';
 
-        switch (tipo) {
-            case 'ticket':
-                endpoint = 'tickets/actualizar_ticket.php';
-                break;
+//         switch (tipo) {
+//             case 'ticket':
+//                 endpoint = 'tickets/actualizar_ticket.php';
+//                 break;
 
-            case 'tarea':
-                endpoint = 'tareas/actualizar_tarea.php';
-                break;
+//             case 'tarea':
+//                 endpoint = 'tareas/actualizar_tarea.php';
+//                 break;
 
-            case 'recurrent_task':
-                endpoint = 'task/actualizar_ciclica.php';
-                break;
+//             case 'recurrent_task':
+//                 endpoint = 'task/actualizar_ciclica.php';
+//                 break;
 
-            case 'reunion':
-                endpoint = 'reuniones/actualizar_reunion.php';
-                break;
+//             case 'reunion':
+//                 endpoint = 'reuniones/actualizar_reunion.php';
+//                 break;
 
-            case 'stats':
-                endpoint = 'stats/actualizar_stats.php';
-                break;
+//             case 'stats':
+//                 endpoint = 'stats/actualizar_stats.php';
+//                 break;
 
-            default:
-                console.error('Tipo no reconocido:', tipo);
-                mostrarToast('Tipo de elemento no válido', 'error');
-                return;
-        }
+//             default:
+//                 console.error('Tipo no reconocido:', tipo);
+//                 mostrarToast('Tipo de elemento no válido', 'error');
+//                 return;
+//         }
 
-        fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: itemId,
-                campo: 'estado',
-                valor: nuevoEstado
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                mostrarToast(`${tipo} ${itemId} actualizado a ${nuevoEstado}`, 'success');
-                if (['Cerrado', 'Cancelado'].includes(nuevoEstado)) {
-                    estadoSelectModal.disabled = true;
-                    estadoSelectModal.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-            } else {
-                mostrarToast('Error al actualizar', 'error');
-            }
-        })
-        .catch(() => {
-            mostrarToast('Error de conexión', 'error');
-        });
-    });
-});
+//         fetch(endpoint, {
+//             method: 'POST',
+//             headers: { 'Content-Type': 'application/json' },
+//             body: JSON.stringify({
+//                 id: itemId,
+//                 campo: 'estado',
+//                 valor: nuevoEstado
+//             })
+//         })
+//         .then(res => res.json())
+//         .then(data => {
+//             if (data.success) {
+//                 mostrarToast(`${tipo} ${itemId} actualizado a ${nuevoEstado}`, 'success');
+//                 if (['Cerrado', 'Cancelado'].includes(nuevoEstado)) {
+//                     estadoSelectModal.disabled = true;
+//                     estadoSelectModal.classList.add('opacity-50', 'cursor-not-allowed');
+//                 }
+//             } else {
+//                 mostrarToast('Error al actualizar', 'error');
+//             }
+//         })
+//         .catch(() => {
+//             mostrarToast('Error de conexión', 'error');
+//         });
+//     });
+// });
